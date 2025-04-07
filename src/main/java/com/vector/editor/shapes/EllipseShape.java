@@ -1,8 +1,10 @@
 package com.vector.editor.shapes;
 
 import com.vector.editor.core.Shape;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 public class EllipseShape extends Shape {
     public EllipseShape(int x, int y, int width, int height,
@@ -12,12 +14,39 @@ public class EllipseShape extends Shape {
 
     @Override
     public void draw(Graphics g) {
-        // TODO: Implement ellipse drawing
+        Graphics2D g2 = (Graphics2D) g; // Graphics2D로 변환
+
+        // 도형 내부 채우기
+        g2.setColor(fillColor);
+        g2.fillOval(x, y, width, height);
+
+        // 도형 외곽선
+        g2.setColor(strokeColor); // 색
+        g2.setStroke(new BasicStroke(strokeWidth)); // 두께
+        g2.drawOval(x, y, width, height);
+
+        if (selected) {
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRect(x - 2, y - 2, width + 4, height + 4);
+        }
     }
 
     @Override
     public boolean contains(int px, int py) {
-        // TODO: Implement point containment check for ellipse
+        // 타원의 중심
+        double cx = x + width / 2.0;
+        double cy = y + height / 2.0;
+
+        double dx = px - cx;
+        double dy = py - cy;
+        double rx = width / 2.0;
+        double ry = height / 2.0;
+
+        if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.0) {
+            return true;
+        }
+
         return false;
     }
 } 
