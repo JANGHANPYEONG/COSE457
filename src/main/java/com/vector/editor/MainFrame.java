@@ -18,7 +18,7 @@ public class MainFrame extends JFrame {
         
         // Initialize components
         canvasPanel = new CanvasPanel();
-        toolPanel = new ToolPanel();
+        toolPanel = new ToolPanel(canvasPanel);
         
         // Add components to frame
         add(toolPanel, BorderLayout.WEST);

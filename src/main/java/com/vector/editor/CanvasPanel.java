@@ -62,6 +62,11 @@ public class CanvasPanel extends JPanel {
             }
         });
     }
+
+    public void addShape(Shape shape) {
+        shapes.add(shape);
+        repaint();
+    }
     
     @Override
     protected void paintComponent(Graphics g) {
