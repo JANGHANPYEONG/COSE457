@@ -1,5 +1,6 @@
 package com.vector.editor.shapes;
 
+import com.vector.editor.CanvasPanel;
 import com.vector.editor.core.Shape;
 import java.awt.BasicStroke;
 import java.awt.Canvas;
@@ -40,7 +41,7 @@ public class TextShape extends Shape {
 
             g2.setColor(Color.BLUE);
             g2.setStroke(new BasicStroke(1));
-            g2.drawRect(x - 2, y - 2, textWidth + 4, textHeight);
+            g2.drawRect(x - 2, y - 2, textWidth + 4, textHeight + 4);
         }
     }
 
