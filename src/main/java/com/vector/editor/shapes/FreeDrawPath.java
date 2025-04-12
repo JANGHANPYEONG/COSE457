@@ -1,9 +1,12 @@
 package com.vector.editor.shapes;
 
 import com.vector.editor.core.Shape;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +23,39 @@ public class FreeDrawPath extends Shape {
 
     @Override
     public void draw(Graphics g) {
-        // TODO: Implement free draw path drawing
+        Graphics2D g2 = (Graphics2D) g;
+
+        g2.setColor(strokeColor);
+        g2.setStroke(new BasicStroke(strokeWidth));
+
+        if (points.size() < 2) return;
+
+        for (int i = 0; i < points.size() - 1; i++) {
+            Point p1 = points.get(i);
+            Point p2 = points.get(i + 1);
+            g2.drawLine(p1.x, p1.y, p2.x, p2.y);
+        }
+
+        if (isSelected()) {
+            Rectangle bounds = getBoundsFromPoints();
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        }
     }
 
     @Override
     public boolean contains(int px, int py) {
-        // TODO: Implement point containment check for free draw path
+        final int tolerance = 4;
+
+        for (int i = 0; i < points.size(); i++) {
+            Point p1 = points.get(i);
+            Point p2 = points.get(i + 1);
+
+            double dist = pointToLineDistance(px, py, p1.x, p1.y, p2.x, p2.y);
+            if (dist <= tolerance) return true;
+        }
+
         return false;
     }
 
@@ -45,5 +75,50 @@ public class FreeDrawPath extends Shape {
     public void setClosed(boolean closed) {
         isClosed = closed;
         notifyObservers();
+    }
+
+    private Rectangle getBoundsFromPoints() {
+        if (points.isEmpty()) return new Rectangle(x, y, width, height);
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (Point p : points) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        }
+
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    private double pointToLineDistance(int px, int py, int x1, int y1, int x2, int y2) {
+        double A = px - x1;
+        double B = py - y1;
+        double C = x2 - x1;
+        double D = y2 - y1;
+
+        double dot = A * C + B * D;
+        double len_sq = C * C + D * D;
+        double param = len_sq != 0 ? dot / len_sq : -1;
+
+        double xx, yy;
+        if (param < 0) {
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) {
+            xx = x2;
+            yy = y2;
+        } else {
+            xx = x1 + param * C;
+            yy = y1 + param * D;
+        }
+
+        double dx = px - xx;
+        double dy = py - yy;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 } 
