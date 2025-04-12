@@ -1,6 +1,7 @@
 package com.vector.editor;
 
 import com.vector.editor.shapes.ImageShape;
+import com.vector.editor.tools.FreeDrawTool;
 import com.vector.editor.utils.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +12,9 @@ public class ToolPanel extends JPanel {
     private CanvasPanel canvasPanel;
     private static final int BUTTON_SIZE = 50;
     private static final int PANEL_WIDTH = 100;
+
+    private Color strokeColor = Color.BLACK;
+    private int strokeWidth = 1;
     
     public ToolPanel(CanvasPanel canvasPanel) {
         this.canvasPanel = canvasPanel;
@@ -25,7 +29,7 @@ public class ToolPanel extends JPanel {
         addShapeButton("Line", "L");
         addShapeButton("Text", "T");
         addShapeButton("Free Draw", "F");
-
+        addImageButton();
     }
     
     private void addShapeButton(String tooltip, String text) {
@@ -37,8 +41,12 @@ public class ToolPanel extends JPanel {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // TODO: Handle shape selection
                 System.out.println("Selected: " + tooltip);
+
+                // TODO: 도형별 Tool 연결
+                if (tooltip.equals("Free Draw")) {
+                    canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
+                }
             }
         });
         add(button);
@@ -70,4 +78,11 @@ public class ToolPanel extends JPanel {
         add(Box.createVerticalStrut(5));
     }
 
+    public void setStrokeColor(Color strokeColor) {
+        this.strokeColor = strokeColor;
+    }
+
+    public void setStrokeWidth(int strokeWidth) {
+        this.strokeWidth = strokeWidth;
+    }
 } 

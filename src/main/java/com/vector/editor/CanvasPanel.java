@@ -2,6 +2,7 @@ package com.vector.editor;
 
 import com.vector.editor.core.Shape;
 import com.vector.editor.shapes.TextShape;
+import com.vector.editor.tools.Tool;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.List;
@@ -18,6 +19,8 @@ public class CanvasPanel extends JPanel {
     private List<Shape> shapes = new ArrayList<>();
     private Shape selectedShape = null;
     private JTextField textEditor = null;
+
+    private Tool currentTool;
     
     public CanvasPanel() {
         setBackground(BACKGROUND_COLOR);
@@ -27,45 +30,72 @@ public class CanvasPanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int mouseX = e.getX();
-                int mouseY = e.getY();
-                selectedShape = null;
-
-                for (Shape shape: shapes) {
-                    if (shape.contains(mouseX, mouseY)) {
-                        shape.select();
-                        selectedShape = shape;
-                    } else {
-                        shape.deselect();
-                    }
-                }
-
-                repaint();
-
-                if (selectedShape instanceof TextShape textShape) {
-                    showInlineTextEditor(textShape);
+                if (currentTool != null && currentTool.isActive()) {
+                    currentTool.mousePressed(e);
                 } else {
-                    removeInlineTextEditor();
+                    handleShapeSelection(e);
                 }
             }
             
             @Override
             public void mouseReleased(MouseEvent e) {
-                // TODO: Handle mouse release for drawing
+                if (currentTool != null && currentTool.isActive()) {
+                    currentTool.mouseReleased(e);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (currentTool != null && currentTool.isActive()) {
+                    currentTool.mouseClicked(e);
+                }
             }
         });
         
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                // TODO: Handle mouse drag for drawing
+                if (currentTool != null && currentTool.isActive()) {
+                    currentTool.mouseDragged(e);
+                }
             }
         });
     }
 
+    // 선택 도구일 때 도형 선택 및 텍스트 편집 처리
+    private void handleShapeSelection(MouseEvent e) {
+        int mouseX = e.getX();
+        int mouseY = e.getY();
+        selectedShape = null;
+
+        for (Shape shape : shapes) {
+            if (shape.contains(mouseX, mouseY)) {
+                shape.select();
+                selectedShape = shape;
+            } else {
+                shape.deselect();
+            }
+        }
+
+        repaint();
+
+        if (selectedShape instanceof TextShape textShape) {
+            showInlineTextEditor(textShape);
+        } else {
+            removeInlineTextEditor();
+        }
+    }
+
+
     public void addShape(Shape shape) {
         shapes.add(shape);
         repaint();
+    }
+
+    public void setCurrentTool(Tool tool) {
+        if (currentTool != null) currentTool.deactivate();
+        currentTool = tool;
+        if (currentTool != null) currentTool.activate();
     }
     
     @Override
@@ -76,8 +106,14 @@ public class CanvasPanel extends JPanel {
         // Enable anti-aliasing for smoother graphics
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
                            RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        // TODO: Draw shapes here
+
+        for (Shape shape : shapes) {
+            shape.draw(g2d);
+        }
+
+        if (currentTool != null && currentTool.isActive()) {
+            currentTool.draw(g2d);
+        }
     }
 
     private void showInlineTextEditor(TextShape textShape) {
