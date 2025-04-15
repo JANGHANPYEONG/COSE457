@@ -30,6 +30,7 @@ public class ToolPanel extends JPanel {
         addShapeButton("Text", "T");
         addShapeButton("Free Draw", "F");
         addImageButton();
+        addUngroupButton();
     }
     
     private void addShapeButton(String tooltip, String text) {
@@ -76,6 +77,15 @@ public class ToolPanel extends JPanel {
 
         add(imageButton);
         add(Box.createVerticalStrut(5));
+    }
+
+    private void addUngroupButton() {
+        JButton ungroupButton = new JButton("Ungroup");
+        ungroupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        ungroupButton.addActionListener(e -> canvasPanel.ungroupSelectedGroup());
+
+        add(ungroupButton);
+        add(Box.createVerticalStrut(10));
     }
 
     public void setStrokeColor(Color strokeColor) {

@@ -1,8 +1,11 @@
 package com.vector.editor.shapes;
 
 import com.vector.editor.core.Shape;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,12 +20,27 @@ public class GroupShape extends Shape {
 
     @Override
     public void draw(Graphics g) {
-        // TODO: Implement group shape drawing
+        for (Shape shape: shapes) {
+            shape.draw(g);
+        }
+
+        if (isSelected()) {
+            Graphics2D g2 = (Graphics2D) g;
+            Rectangle bounds = getGroupBounds();
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        }
     }
 
     @Override
     public boolean contains(int px, int py) {
-        // TODO: Implement point containment check for group
+        Rectangle bounds = getGroupBounds();
+
+        if ((px >= bounds.x && px <= bounds.x + bounds.width) && (py >= bounds.y && py <= bounds.y + bounds.height)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -50,7 +68,56 @@ public class GroupShape extends Shape {
 
     @Override
     public void resize(int dw, int dh) {
+        int oldX = x;
+        int oldY = y;
+        int oldWidth = width;
+        int oldHeight = height;
+
         super.resize(dw, dh);
-        // TODO: Implement proportional resizing of child shapes
+
+        int newWidth = width;
+        int newHeight = height;
+
+        double scaleX = oldWidth != 0 ? (double) newWidth / oldWidth : 1.0;
+        double scaleY = oldHeight != 0 ? (double) newHeight / oldHeight : 1.0;
+
+        for (Shape shape: shapes) {
+            int relX = shape.getX() - oldX;
+            int relY = shape.getY() - oldY;
+
+            int newX = x + (int)(relX * scaleX);
+            int newY = y + (int)(relY * scaleY);
+
+            int newW = (int)(shape.getWidth() * scaleX);
+            int newH = (int)(shape.getHeight() * scaleY);
+
+            shape.move(newX - shape.getX(), newY - shape.getY());
+            shape.resize(newW - shape.getWidth(), newH - shape.getHeight());
+        }
+
+        notifyObservers();
     }
+
+    public List<Shape> ungroup() {
+        return new ArrayList<>(shapes);
+    }
+
+    private Rectangle getGroupBounds() {
+        if (shapes.isEmpty()) return new Rectangle(x, y, width, height);
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (Shape shape : shapes) {
+            minX = Math.min(minX, shape.getX());
+            minY = Math.min(minY, shape.getY());
+            maxX = Math.max(maxX, shape.getX() + shape.getWidth());
+            maxY = Math.max(maxY, shape.getY() + shape.getHeight());
+        }
+
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+    }
+
 } 

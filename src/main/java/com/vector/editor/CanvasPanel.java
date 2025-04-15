@@ -1,6 +1,7 @@
 package com.vector.editor;
 
 import com.vector.editor.core.Shape;
+import com.vector.editor.shapes.GroupShape;
 import com.vector.editor.shapes.TextShape;
 import com.vector.editor.tools.Tool;
 import java.awt.event.FocusAdapter;
@@ -96,6 +97,21 @@ public class CanvasPanel extends JPanel {
         if (currentTool != null) currentTool.deactivate();
         currentTool = tool;
         if (currentTool != null) currentTool.activate();
+    }
+
+    public void ungroupSelectedGroup() {
+        if (selectedShape instanceof GroupShape group) {
+            List<Shape> children = group.ungroup();
+
+            // 그룹 제거
+            shapes.remove(group);
+
+            // 자식 도형을 다시 추가
+            shapes.addAll(children);
+
+            selectedShape = null;
+            repaint();
+        }
     }
     
     @Override
