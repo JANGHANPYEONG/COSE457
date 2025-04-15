@@ -19,6 +19,7 @@ public class CanvasPanel extends JPanel {
 
     private List<Shape> shapes = new ArrayList<>();
     private Shape selectedShape = null;
+    private List<Shape> selectedShapes = new ArrayList<>();
     private JTextField textEditor = null;
 
     private Tool currentTool;
@@ -67,26 +68,52 @@ public class CanvasPanel extends JPanel {
     private void handleShapeSelection(MouseEvent e) {
         int mouseX = e.getX();
         int mouseY = e.getY();
-        selectedShape = null;
+        boolean isShift = e.isShiftDown();
+        boolean foundShape = false;
 
         for (Shape shape : shapes) {
             if (shape.contains(mouseX, mouseY)) {
-                shape.select();
-                selectedShape = shape;
-            } else {
-                shape.deselect();
+                foundShape = true;
+
+                if (isShift) {
+                    if (selectedShapes.contains(shape)) {
+                        shape.deselect();
+                        selectedShapes.remove(shape);
+                    } else {
+                        shape.select();
+                        selectedShapes.add(shape);
+                    }
+                } else {
+                    // Shift가 안 눌려있으면 도형을 하나만 선택
+                    for (Shape s : shapes) s.deselect();
+                    selectedShapes.clear();
+
+                    shape.select();
+                    selectedShapes.add(shape);
+                    selectedShape = shape;
+                }
+
+                break; // 가장 위에 있는 도형 하나만 처리
             }
         }
 
-        repaint();
+        // 선택된 도형이 없고, Shift도 안 눌렸으면 전체 선택 해제
+        if (!foundShape && !isShift) {
+            for (Shape s : shapes) s.deselect();
+            selectedShapes.clear();
+            selectedShape = null;
+            removeInlineTextEditor();
+        }
 
-        if (selectedShape instanceof TextShape textShape) {
+        // 텍스트 편집기
+        if (!isShift && selectedShape instanceof TextShape textShape) {
             showInlineTextEditor(textShape);
         } else {
             removeInlineTextEditor();
         }
-    }
 
+        repaint();
+    }
 
     public void addShape(Shape shape) {
         shapes.add(shape);
@@ -97,21 +124,6 @@ public class CanvasPanel extends JPanel {
         if (currentTool != null) currentTool.deactivate();
         currentTool = tool;
         if (currentTool != null) currentTool.activate();
-    }
-
-    public void ungroupSelectedGroup() {
-        if (selectedShape instanceof GroupShape group) {
-            List<Shape> children = group.ungroup();
-
-            // 그룹 제거
-            shapes.remove(group);
-
-            // 자식 도형을 다시 추가
-            shapes.addAll(children);
-
-            selectedShape = null;
-            repaint();
-        }
     }
     
     @Override
