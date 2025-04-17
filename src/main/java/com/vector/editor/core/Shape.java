@@ -14,6 +14,9 @@ public abstract class Shape {
     protected boolean selected;
     protected int zOrder;
     protected List<ShapeObserver> observers;
+    protected int originalZOrder;
+
+    protected static int maxZOrder = 0;
 
     public Shape(int x, int y, int width, int height,
                  Color fillColor, Color strokeColor, int strokeWidth) {
@@ -45,13 +48,20 @@ public abstract class Shape {
     }
 
     public void select() {
-        this.selected = true;
-        notifyObservers();
+        if (!selected) { // 중복 호출 방지
+            this.selected = true;
+            originalZOrder = zOrder; // 기존 위치 저장
+            setZOrder(9999); // 선택된 도형을 가장 앞으로
+            notifyObservers();
+        }
     }
 
     public void deselect() {
-        this.selected = false;
-        notifyObservers();
+        if (selected) {
+            this.selected = false;
+            setZOrder(originalZOrder); // 기존 위치로
+            notifyObservers();
+        }
     }
 
     public void setZOrder(int zOrder) {

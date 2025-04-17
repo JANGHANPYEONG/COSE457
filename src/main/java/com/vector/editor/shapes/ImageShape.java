@@ -1,8 +1,10 @@
 package com.vector.editor.shapes;
 
 import com.vector.editor.core.Shape;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 
 public class ImageShape extends Shape {
@@ -19,12 +21,70 @@ public class ImageShape extends Shape {
 
     @Override
     public void draw(Graphics g) {
-        // TODO: Implement image drawing
+        Graphics2D g2 = (Graphics2D) g;
+
+        if (image == null) return;
+
+        int drawX = x;
+        int drawY = y;
+        int drawWidth = width;
+        int drawHeight = height;
+
+        // 비율 유지
+        if (maintainAspectRatio) {
+            int imgWidth = image.getWidth(null);
+            int imgHeight = image.getHeight(null);
+            if (imgWidth > 0 && imgHeight > 0) {
+                float imgRatio = (float) imgWidth / imgHeight;
+                float shapeRatio = (float) width / height;
+
+                if (shapeRatio > imgRatio) {
+                    drawWidth = (int) (height * imgRatio);
+                    drawX = x + (width - drawWidth) / 2;
+                } else {
+                    drawHeight = (int) (width / imgRatio);
+                    drawY = y + (height - drawHeight) / 2;
+                }
+            }
+        }
+
+        g2.drawImage(image, drawX, drawY, drawWidth, drawHeight, null);
+
+        if (isSelected()) {
+            g2.setColor(Color.BLUE);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRect(x - 2, y - 2, width + 4, height + 4);
+        }
     }
 
     @Override
     public boolean contains(int px, int py) {
-        // TODO: Implement point containment check for image
+        int drawX = x;
+        int drawY = y;
+        int drawWidth = width;
+        int drawHeight = height;
+
+        if (maintainAspectRatio && image != null) {
+            int imgWidth = image.getWidth(null);
+            int imgHeight = image.getHeight(null);
+            if (imgWidth > 0 && imgHeight > 0) {
+                float imgRatio = (float) imgWidth / imgHeight;
+                float shapeRatio = (float) width / height;
+
+                if (shapeRatio > imgRatio) {
+                    drawWidth = (int) (height * imgRatio);
+                    drawX = x + (width - drawWidth) / 2;
+                } else {
+                    drawHeight = (int) (width / imgRatio);
+                    drawY = y + (height - drawHeight) / 2;
+                }
+            }
+        }
+
+        if ((px >= drawX && px <= drawX + drawWidth) && (py >= drawY && py <= drawY + drawHeight)) {
+            return true;
+        }
+
         return false;
     }
 
