@@ -22,6 +22,10 @@ public class CanvasPanel extends JPanel {
     private List<Shape> selectedShapes = new ArrayList<>();
     private JTextField textEditor = null;
 
+    private Point dragStart = null;
+    private Point dragEnd = null;
+    private boolean isRubberBandActive = false;
+
     private Tool currentTool;
     
     public CanvasPanel() {
@@ -34,7 +38,12 @@ public class CanvasPanel extends JPanel {
             public void mousePressed(MouseEvent e) {
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mousePressed(e);
-                } else {
+                } else if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown()) {
+                    // 드래그로 다중 선택 시작
+                    dragStart = e.getPoint();
+                    dragEnd = e.getPoint();
+                    isRubberBandActive = true;
+                }else {
                     handleShapeSelection(e);
                 }
             }
@@ -43,6 +52,25 @@ public class CanvasPanel extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseReleased(e);
+                } else if (isRubberBandActive) {
+                    // 드래그 종료
+                    dragEnd = e.getPoint();
+                    Rectangle box = getRubberBandBounds();
+
+                    selectedShapes.clear();
+                    for (Shape shape : shapes) {
+                        Rectangle bounds = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+                        if (box.intersects(bounds)) {
+                            shape.select();
+                            selectedShapes.add(shape);
+                        } else {
+                            shape.deselect();
+                        }
+                    }
+
+                    dragStart = dragEnd = null;
+                    isRubberBandActive = false;
+                    repaint();
                 }
             }
 
@@ -59,9 +87,20 @@ public class CanvasPanel extends JPanel {
             public void mouseDragged(MouseEvent e) {
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseDragged(e);
+                } else if (isRubberBandActive) {
+                    dragEnd = e.getPoint();
+                    repaint();
                 }
             }
         });
+    }
+
+    private Rectangle getRubberBandBounds() {
+        int x = Math.min(dragStart.x, dragEnd.x);
+        int y = Math.min(dragStart.y, dragEnd.y);
+        int width = Math.abs(dragStart.x - dragEnd.x);
+        int height = Math.abs(dragStart.y - dragEnd.y);
+        return new Rectangle(x, y, width, height);
     }
 
     // 선택 도구일 때 도형 선택 및 텍스트 편집 처리
@@ -137,6 +176,16 @@ public class CanvasPanel extends JPanel {
 
         for (Shape shape : shapes) {
             shape.draw(g2d);
+        }
+
+        // 드래그 러버밴드 박스
+        if (isRubberBandActive && dragStart != null && dragEnd != null) {
+            Rectangle box = getRubberBandBounds();
+            g2d.setColor(new Color(0, 120, 215, 64)); // 반투명 파랑
+            g2d.fill(box);
+            g2d.setColor(Color.BLUE);
+            g2d.setStroke(new BasicStroke(1));
+            g2d.draw(box);
         }
 
         if (currentTool != null && currentTool.isActive()) {
