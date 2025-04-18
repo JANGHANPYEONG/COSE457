@@ -26,10 +26,7 @@ public class GroupShape extends Shape {
 
         if (isSelected()) {
             Graphics2D g2 = (Graphics2D) g;
-            Rectangle bounds = getGroupBounds();
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke(1));
-            g2.drawRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+            drawSelectionUI(g2);
         }
     }
 
@@ -42,20 +39,6 @@ public class GroupShape extends Shape {
         }
 
         return false;
-    }
-
-    public void addShape(Shape shape) {
-        shapes.add(shape);
-        notifyObservers();
-    }
-
-    public void removeShape(Shape shape) {
-        shapes.remove(shape);
-        notifyObservers();
-    }
-
-    public List<Shape> getShapes() {
-        return new ArrayList<>(shapes);
     }
 
     @Override
@@ -98,8 +81,9 @@ public class GroupShape extends Shape {
         notifyObservers();
     }
 
-    public List<Shape> ungroup() {
-        return new ArrayList<>(shapes);
+    @Override
+    public Rectangle getBoundsWithStroke() {
+        return getGroupBounds();
     }
 
     private Rectangle getGroupBounds() {
@@ -118,6 +102,24 @@ public class GroupShape extends Shape {
         }
 
         return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public void addShape(Shape shape) {
+        shapes.add(shape);
+        notifyObservers();
+    }
+
+    public void removeShape(Shape shape) {
+        shapes.remove(shape);
+        notifyObservers();
+    }
+
+    public List<Shape> getShapes() {
+        return new ArrayList<>(shapes);
+    }
+
+    public List<Shape> ungroup() {
+        return new ArrayList<>(shapes);
     }
 
 } 

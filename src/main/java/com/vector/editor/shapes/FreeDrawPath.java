@@ -37,10 +37,7 @@ public class FreeDrawPath extends Shape {
         }
 
         if (isSelected()) {
-            Rectangle bounds = getBoundsFromPoints();
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke(1));
-            g2.drawRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+            drawSelectionUI(g2);
         }
     }
 
@@ -57,6 +54,18 @@ public class FreeDrawPath extends Shape {
         }
 
         return false;
+    }
+
+    @Override
+    public Rectangle getBoundsWithStroke() {
+        Rectangle base = getBoundsFromPoints();
+        int inset = strokeWidth / 2;
+        return new Rectangle(
+            base.x - inset,
+            base.y - inset,
+            base.width + strokeWidth,
+            base.height + strokeWidth
+        );
     }
 
     public void addPoint(Point point) {

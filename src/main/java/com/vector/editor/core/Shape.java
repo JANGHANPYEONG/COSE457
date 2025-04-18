@@ -1,7 +1,10 @@
 package com.vector.editor.core;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,5 +113,37 @@ public abstract class Shape {
     public void setStrokeWidth(int strokeWidth) {
         this.strokeWidth = strokeWidth;
         notifyObservers();
+    }
+
+    public Rectangle getBoundsWithStroke() {
+        int inset = strokeWidth / 2;
+        return new Rectangle(
+            x - inset,
+            y - inset,
+            width + strokeWidth,
+            height + strokeWidth
+        );
+    }
+
+    protected void drawSelectionUI(Graphics2D g2) {
+        Rectangle bounds = getBoundsWithStroke();
+
+        // 선택 테두리
+        g2.setColor(Color.BLUE);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+        // 리사이징 핸들
+        int handleSize = 8;
+        int[][] handles = {
+            {bounds.x - handleSize / 2, bounds.y - handleSize / 2}, // top-left
+            {bounds.x + bounds.width - handleSize / 2, bounds.y - handleSize / 2}, // top-right
+            {bounds.x - handleSize / 2, bounds.y + bounds.height - handleSize / 2}, // bottom-left
+            {bounds.x + bounds.width - handleSize / 2, bounds.y + bounds.height - handleSize / 2} // bottom-right
+        };
+
+        for (int[] pos : handles) {
+            g2.fillRect(pos[0], pos[1], handleSize, handleSize);
+        }
     }
 } 

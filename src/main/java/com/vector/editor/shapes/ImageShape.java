@@ -51,9 +51,7 @@ public class ImageShape extends Shape {
         g2.drawImage(image, drawX, drawY, drawWidth, drawHeight, null);
 
         if (isSelected()) {
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke(1));
-            g2.drawRect(x - 2, y - 2, width + 4, height + 4);
+            drawSelectionUI(g2);
         }
     }
 

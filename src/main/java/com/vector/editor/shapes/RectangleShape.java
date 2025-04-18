@@ -24,9 +24,7 @@ public class RectangleShape extends Shape {
         g2.drawRect(x, y, width, height);
 
         if (isSelected()) {
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke(1));
-            g2.drawRect(x - 2, y - 2, width + 4, height + 4);
+            drawSelectionUI(g2);
         }
     }
 

@@ -9,6 +9,8 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 public class TextShape extends Shape {
     private String text;
@@ -35,13 +37,7 @@ public class TextShape extends Shape {
         g2.drawString(text, x, y + fontSize);
 
         if (isSelected()) {
-            FontMetrics metrics = g2.getFontMetrics(font);
-            int textWidth = metrics.stringWidth(text);
-            int textHeight = metrics.getHeight();
-
-            g2.setColor(Color.BLUE);
-            g2.setStroke(new BasicStroke(1));
-            g2.drawRect(x - 2, y - 2, textWidth + 4, textHeight + 4);
+            drawSelectionUI(g2);
         }
     }
 
@@ -58,6 +54,22 @@ public class TextShape extends Shape {
 
         return false;
     }
+
+    @Override
+    public Rectangle getBoundsWithStroke() {
+        Font font = new Font(fontName, Font.PLAIN, fontSize);
+
+        BufferedImage dummy = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = dummy.createGraphics();
+        FontMetrics metrics = g2.getFontMetrics(font);
+
+        int textWidth = metrics.stringWidth(text);
+        int textHeight = metrics.getHeight();
+        g2.dispose();
+
+        return new Rectangle(x, y, textWidth, textHeight);
+    }
+
 
     public String getText() {
         return text;
