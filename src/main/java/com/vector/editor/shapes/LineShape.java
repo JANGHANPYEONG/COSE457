@@ -13,6 +13,15 @@ public class LineShape extends Shape {
         super(x, y, width, height, fillColor, strokeColor, strokeWidth);
     }
 
+    public LineShape(int x1, int y1, int x2, int y2, Color strokeColor, int strokeWidth) {
+        super(x1, y1, x2 - x1, y2 - y1, strokeColor, strokeColor, strokeWidth);
+    }
+
+    public void setEndPoint(int x2, int y2) {
+        this.width = x2 - this.x;
+        this.height = y2 - this.y;
+    }
+
     @Override
     public void draw(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;

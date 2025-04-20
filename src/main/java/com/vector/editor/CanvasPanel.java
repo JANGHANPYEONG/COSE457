@@ -145,7 +145,8 @@ public class CanvasPanel extends JPanel {
         }
 
         // 텍스트 편집기
-        if (!isShift && selectedShape instanceof TextShape textShape) {
+        if (!isShift && selectedShape instanceof TextShape) {
+            TextShape textShape = (TextShape) selectedShape;
             showInlineTextEditor(textShape);
         } else {
             removeInlineTextEditor();
@@ -157,6 +158,10 @@ public class CanvasPanel extends JPanel {
     public void addShape(Shape shape) {
         shapes.add(shape);
         repaint();
+    }
+
+    public List<Shape> getShapes() {
+        return shapes;
     }
 
     public void setCurrentTool(Tool tool) {

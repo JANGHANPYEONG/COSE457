@@ -2,6 +2,9 @@ package com.vector.editor;
 
 import com.vector.editor.shapes.ImageShape;
 import com.vector.editor.tools.FreeDrawTool;
+import com.vector.editor.tools.RectangleTool;
+import com.vector.editor.tools.LineTool;
+import com.vector.editor.tools.TextTool;
 import com.vector.editor.utils.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
@@ -25,7 +28,6 @@ public class ToolPanel extends JPanel {
         
         // Add shape buttons
         addShapeButton("Rectangle", "R");
-        addShapeButton("Ellipse", "E");
         addShapeButton("Line", "L");
         addShapeButton("Text", "T");
         addShapeButton("Free Draw", "F");
@@ -43,9 +45,19 @@ public class ToolPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Selected: " + tooltip);
 
-                // TODO: 도형별 Tool 연결
-                if (tooltip.equals("Free Draw")) {
-                    canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
+                switch (tooltip) {
+                    case "Rectangle":
+                        canvasPanel.setCurrentTool(new RectangleTool(canvasPanel));
+                        break;
+                    case "Line":
+                        canvasPanel.setCurrentTool(new LineTool(canvasPanel));
+                        break;
+                    case "Text":
+                        canvasPanel.setCurrentTool(new TextTool(canvasPanel));
+                        break;
+                    case "Free Draw":
+                        canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
+                        break;
                 }
             }
         });

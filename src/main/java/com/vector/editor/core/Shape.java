@@ -2,6 +2,7 @@ package com.vector.editor.core;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +35,10 @@ public abstract class Shape {
 
     public abstract void draw(Graphics g);
     public abstract boolean contains(int px, int py);
+
+    public boolean intersects(Rectangle rect) {
+        return rect.intersects(x, y, width, height);
+    }
 
     public void move(int dx, int dy) {
         this.x += dx;
