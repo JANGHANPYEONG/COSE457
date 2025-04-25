@@ -38,6 +38,10 @@ public abstract class Shape {
     public abstract void draw(Graphics g);
     public abstract boolean contains(int px, int py);
 
+    public boolean intersects(Rectangle rect) {
+        return rect.intersects(x, y, width, height);
+    }
+
     public void move(int dx, int dy) {
         this.x += dx;
         this.y += dy;
@@ -146,4 +150,4 @@ public abstract class Shape {
             g2.fillRect(pos[0], pos[1], handleSize, handleSize);
         }
     }
-} 
+}
