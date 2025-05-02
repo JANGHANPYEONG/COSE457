@@ -1,6 +1,7 @@
 package com.vector.editor;
 
 import com.vector.editor.core.Shape;
+import com.vector.editor.core.Shape.HandlePosition;
 import com.vector.editor.shapes.GroupShape;
 import com.vector.editor.shapes.TextShape;
 import com.vector.editor.tools.Tool;
@@ -8,6 +9,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -27,6 +29,10 @@ public class CanvasPanel extends JPanel {
     private boolean isRubberBandActive = false;
 
     private Tool currentTool;
+
+    private Shape resizingShape = null;
+    private HandlePosition resizingHandle = null;
+    private Point prevMousePoint = null;
     
     public CanvasPanel() {
         setBackground(BACKGROUND_COLOR);
@@ -36,6 +42,23 @@ public class CanvasPanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                Point p = e.getPoint();
+                resizingShape = null;
+                resizingHandle = null;
+
+                for (Shape shape : shapes) {
+                    if (shape.isSelected()) {
+                        for (Map.Entry<HandlePosition, Rectangle> entry : shape.getResizeHandles().entrySet()) {
+                            if (entry.getValue().contains(p)) {
+                                resizingShape = shape;
+                                resizingHandle = entry.getKey();
+                                prevMousePoint = p;
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mousePressed(e);
                 } else if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown()) {
@@ -50,6 +73,14 @@ public class CanvasPanel extends JPanel {
             
             @Override
             public void mouseReleased(MouseEvent e) {
+                if (resizingShape != null) {
+                    resizingShape = null;
+                    resizingHandle = null;
+                    prevMousePoint = null;
+                    repaint();
+                    return;
+                }
+
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseReleased(e);
                 } else if (isRubberBandActive) {
@@ -85,6 +116,32 @@ public class CanvasPanel extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
+                if (resizingShape != null && resizingHandle != null && prevMousePoint != null) {
+                    Point curr = e.getPoint();
+                    int dx = curr.x - prevMousePoint.x;
+                    int dy = curr.y - prevMousePoint.y;
+
+                    switch (resizingHandle) {
+                        case BOTTOM_RIGHT -> resizingShape.resize(dx, dy);
+                        case TOP_LEFT -> {
+                            resizingShape.move(dx, dy);
+                            resizingShape.resize(-dx, -dy);
+                        }
+                        case TOP_RIGHT -> {
+                            resizingShape.move(0, dy);
+                            resizingShape.resize(dx, -dy);
+                        }
+                        case BOTTOM_LEFT -> {
+                            resizingShape.move(dx, 0);
+                            resizingShape.resize(-dx, dy);
+                        }
+                    }
+
+                    prevMousePoint = curr;
+                    repaint();
+                    return;
+                }
+
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseDragged(e);
                 } else if (isRubberBandActive) {
