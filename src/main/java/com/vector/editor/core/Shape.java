@@ -6,7 +6,9 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Shape {
     protected int x, y;
@@ -139,15 +141,29 @@ public abstract class Shape {
 
         // 리사이징 핸들
         int handleSize = 8;
-        int[][] handles = {
-            {bounds.x - handleSize / 2, bounds.y - handleSize / 2}, // top-left
-            {bounds.x + bounds.width - handleSize / 2, bounds.y - handleSize / 2}, // top-right
-            {bounds.x - handleSize / 2, bounds.y + bounds.height - handleSize / 2}, // bottom-left
-            {bounds.x + bounds.width - handleSize / 2, bounds.y + bounds.height - handleSize / 2} // bottom-right
-        };
+        for (Rectangle handle : getResizeHandles().values()) {
+            g2.setColor(Color.WHITE); // 안쪽
+            g2.fillRect(handle.x, handle.y, handle.width, handle.height);
 
-        for (int[] pos : handles) {
-            g2.fillRect(pos[0], pos[1], handleSize, handleSize);
+            g2.setColor(Color.BLUE); // 테두리
+            g2.drawRect(handle.x, handle.y, handle.width, handle.height);
         }
+    }
+
+    public enum HandlePosition {
+        TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+    }
+
+    public Map<HandlePosition, Rectangle> getResizeHandles() {
+        Map<HandlePosition, Rectangle> handles = new HashMap<>();
+        Rectangle bounds = getBoundsWithStroke();
+        int handleSize = 8;
+
+        handles.put(HandlePosition.TOP_LEFT, new Rectangle(bounds.x - handleSize / 2, bounds.y - handleSize / 2, handleSize, handleSize));
+        handles.put(HandlePosition.TOP_RIGHT, new Rectangle(bounds.x + bounds.width - handleSize / 2, bounds.y - handleSize / 2, handleSize, handleSize));
+        handles.put(HandlePosition.BOTTOM_LEFT, new Rectangle(bounds.x - handleSize / 2, bounds.y + bounds.height - handleSize / 2, handleSize, handleSize));
+        handles.put(HandlePosition.BOTTOM_RIGHT, new Rectangle(bounds.x + bounds.width - handleSize / 2, bounds.y + bounds.height - handleSize / 2, handleSize, handleSize));
+
+        return handles;
     }
 }
