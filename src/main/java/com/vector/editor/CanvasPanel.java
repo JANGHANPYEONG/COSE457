@@ -8,6 +8,7 @@ import com.vector.editor.command.PropertyChangeCommand;
 import com.vector.editor.command.ResizeCommand;
 import com.vector.editor.core.Shape;
 import com.vector.editor.core.Shape.HandlePosition;
+import com.vector.editor.core.ShapeObserver;
 import com.vector.editor.shapes.GroupShape;
 import com.vector.editor.shapes.TextShape;
 import com.vector.editor.tools.Tool;
@@ -24,7 +25,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
-public class CanvasPanel extends JPanel {
+public class CanvasPanel extends JPanel implements ShapeObserver {
     private final CommandManager commandManager;
     private final ToolManager toolManager;
 
@@ -47,7 +48,10 @@ public class CanvasPanel extends JPanel {
     private Point prevMousePoint = null;
 
     // 도형 원래 위치 및 크기 저장 (Undo/Redo용)
-    private Map<Shape, Rectangle> originalBounds = new HashMap<>();
+    private final Map<Shape, Rectangle> beforeResizeBounds = new HashMap<>();
+    private final Map<Shape, Rectangle> afterResizeBounds = new HashMap<>();
+
+    private final Map<Shape, Point> beforeMoveStates = new HashMap<>();
 
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
@@ -179,13 +183,17 @@ public class CanvasPanel extends JPanel {
                     prevMousePoint = p;
 
                     // 원래 크기 저장
-                    saveOriginalBounds(shape);
+                    saveBeforeResizeBounds(shape);
 
                     return shape;
                 }
             }
         }
         return null;
+    }
+
+    private void saveBeforeResizeBounds(Shape shape) {
+        beforeResizeBounds.put(shape, new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight()));
     }
 
     // 특정 위치에 있는 도형 찾기
@@ -246,15 +254,10 @@ public class CanvasPanel extends JPanel {
 
         // 모든 선택된 도형의 원래 위치 저장
         for (Shape shape : selectedShapes) {
-            saveOriginalBounds(shape);
+            beforeMoveStates.put(shape, new Point(shape.getX(), shape.getY()));
         }
 
         repaint();
-    }
-
-    // 원래 위치와 크기 저장
-    private void saveOriginalBounds(Shape shape) {
-        originalBounds.put(shape, new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight()));
     }
 
     // 모든 선택 해제
@@ -309,67 +312,61 @@ public class CanvasPanel extends JPanel {
 
     // 리사이징 완료 처리
     private void finalizeResizing() {
-        Rectangle originalRect = originalBounds.get(resizingShape);
-        if (originalRect != null) {
-            int dx = 0;
-            int dy = 0;
+        afterResizeBounds.clear();
 
-            switch (resizingHandle) {
-                case TOP_LEFT -> {
-                    dx = resizingShape.getX() - originalRect.x;
-                    dy = resizingShape.getY() - originalRect.y;
-                }
-                case TOP_RIGHT -> {
-                    dy = resizingShape.getY() - originalRect.y;
-                }
-                case BOTTOM_LEFT -> {
-                    dx = resizingShape.getX() - originalRect.x;
-                }
-            }
+        for (Shape shape : selectedShapes) {
+            Rectangle current = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+            afterResizeBounds.put(shape, current);
+        }
 
-            if (dx != 0 || dy != 0 ||
-                resizingShape.getWidth() != originalRect.width ||
-                resizingShape.getHeight() != originalRect.height) {
-
-                Command resizeCmd = new ResizeCommand(
-                    selectedShapes,
-                    resizingHandle,
-                    dx,
-                    dy
-                );
-                commandManager.executeCommand(resizeCmd);
-            }
+        if (!beforeResizeBounds.isEmpty()) {
+            Command resizeCmd = new ResizeCommand(
+                new ArrayList<>(beforeResizeBounds.keySet()),
+                beforeResizeBounds,
+                afterResizeBounds
+            );
+            commandManager.executeCommand(resizeCmd);
         }
 
         resizingShape = null;
         resizingHandle = null;
         prevMousePoint = null;
-        originalBounds.clear();
+        beforeResizeBounds.clear();
+        afterResizeBounds.clear();
         repaint();
     }
 
     // 드래깅 완료 처리
     private void finalizeDragging() {
         if (!selectedShapes.isEmpty()) {
-            // 이동 거리 계산
-            Rectangle firstRect = originalBounds.get(selectedShapes.get(0));
-            if (firstRect != null) {
-                int dx = selectedShapes.get(0).getX() - firstRect.x;
-                int dy = selectedShapes.get(0).getY() - firstRect.y;
+            Map<Shape, Point> afterMoveStates = new HashMap<>();
 
-                if (dx != 0 || dy != 0) {
-                    // 기존 MoveCommand 사용
-                    Command moveCmd = new MoveCommand(selectedShapes, dx, dy);
-                    commandManager.executeCommand(moveCmd);
-                }
+            for (Shape shape : selectedShapes) {
+                afterMoveStates.put(shape, new Point(shape.getX(), shape.getY()));
+            }
+
+            boolean moved = selectedShapes.stream().anyMatch(shape -> {
+                Point before = beforeMoveStates.get(shape);
+                Point after = afterMoveStates.get(shape);
+                return before != null && (before.x != after.x || before.y != after.y);
+            });
+
+            if (moved) {
+                Command moveCmd = new MoveCommand(
+                    new ArrayList<>(selectedShapes),
+                    new HashMap<>(beforeMoveStates),
+                    afterMoveStates
+                );
+                commandManager.executeCommand(moveCmd);
             }
         }
 
         isDraggingShapes = false;
         prevMousePoint = null;
-        originalBounds.clear();
+        beforeMoveStates.clear();
         repaint();
     }
+
 
     // 러버밴드 선택 완료 처리
     private void finalizeRubberBandSelection(MouseEvent e) {
@@ -413,6 +410,11 @@ public class CanvasPanel extends JPanel {
     public void addShape(Shape shape) {
         Command addCmd = new AddShapeCommand(shapes, shape);
         commandManager.executeCommand(addCmd);
+        repaint();
+    }
+
+    @Override
+    public void onShapeChanged(Shape shape) {
         repaint();
     }
 
@@ -480,6 +482,7 @@ public class CanvasPanel extends JPanel {
                 String newText = textEditor.getText();
 
                 Command changeText = new PropertyChangeCommand<>(
+                    textShape::getText,
                     textShape::setText,
                     oldText,
                     newText
