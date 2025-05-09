@@ -4,6 +4,8 @@ import com.vector.editor.command.AddShapeCommand;
 import com.vector.editor.command.Command;
 import com.vector.editor.command.CommandManager;
 import com.vector.editor.command.MoveCommand;
+import com.vector.editor.command.PropertyChangeCommand;
+import com.vector.editor.command.ResizeCommand;
 import com.vector.editor.core.Shape;
 import com.vector.editor.core.Shape.HandlePosition;
 import com.vector.editor.shapes.GroupShape;
@@ -11,6 +13,7 @@ import com.vector.editor.shapes.TextShape;
 import com.vector.editor.tools.Tool;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -21,7 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class CanvasPanel extends JPanel {
-    private CommandManager commandManager;
+    private final CommandManager commandManager;
 
     private static final Color BACKGROUND_COLOR = Color.WHITE;
 
@@ -36,92 +39,81 @@ public class CanvasPanel extends JPanel {
 
     private Tool currentTool;
 
-    private boolean isDraggingShape = false;
-    private Point dragOffset = null;
+    private boolean isDraggingShapes = false;
     private Shape resizingShape = null;
     private HandlePosition resizingHandle = null;
     private Point prevMousePoint = null;
-    
+
+    // 도형 원래 위치 및 크기 저장 (Undo/Redo용)
+    private Map<Shape, Rectangle> originalBounds = new HashMap<>();
+
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
 
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(800, 600));
-        
+
         // Add mouse listeners for drawing
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 Point p = e.getPoint();
-                resizingShape = null;
-                resizingHandle = null;
-                isDraggingShape = false;
 
-                for (Shape shape : shapes) {
-                    if (shape.isSelected()) {
-                        for (Map.Entry<HandlePosition, Rectangle> entry : shape.getResizeHandles().entrySet()) {
-                            if (entry.getValue().contains(p)) {
-                                resizingShape = shape;
-                                resizingHandle = entry.getKey();
-                                prevMousePoint = p;
-                                return;
-                            }
-                        }
-
-                        // 리사이징 핸들이 아닌 도형 내부를 클릭했을 경우
-                        if (shape.contains(p.x, p.y)) {
-                            resizingShape = null;
-                            resizingHandle = null;
-                            isDraggingShape = true;
-                            prevMousePoint = p;
-                            return;
-                        }
-                    }
-                }
-
+                // 현재 도구가 활성화되어 있으면 도구에 마우스 이벤트 위임
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mousePressed(e);
-                } else if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown()) {
-                    // 드래그로 다중 선택 시작
-                    dragStart = e.getPoint();
-                    dragEnd = e.getPoint();
-                    isRubberBandActive = true;
-                }else {
-                    handleShapeSelection(e);
-                }
-            }
-            
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (resizingShape != null) {
-                    resizingShape = null;
-                    resizingHandle = null;
-                    prevMousePoint = null;
-                    repaint();
                     return;
                 }
 
-                if (currentTool != null && currentTool.isActive()) {
-                    currentTool.mouseReleased(e);
-                } else if (isRubberBandActive) {
-                    // 드래그 종료
-                    dragEnd = e.getPoint();
-                    Rectangle box = getRubberBandBounds();
+                // 리사이징 핸들 확인
+                Shape shapeToResize = checkForResizeHandles(p);
+                if (shapeToResize != null) {
+                    return; // 리사이징 핸들을 찾았으면 여기서 종료
+                }
 
-                    selectedShapes.clear();
-                    for (Shape shape : shapes) {
-                        Rectangle bounds = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
-                        if (box.intersects(bounds)) {
-                            shape.select();
-                            selectedShapes.add(shape);
-                        } else {
-                            shape.deselect();
-                        }
+                // 도형 선택 또는 드래그 확인
+                Shape clickedShape = findShapeAt(p);
+                if (clickedShape != null) {
+                    handleShapeClick(clickedShape, e);
+                    return; // 도형을 찾았으면 여기서 종료
+                }
+
+                // 빈 공간 클릭 - 다중 선택을 위한 러버밴드 시작 또는 모든 선택 해제
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (!e.isShiftDown()) {
+                        // 모든 선택 해제
+                        clearAllSelections();
                     }
 
-                    dragStart = dragEnd = null;
-                    isRubberBandActive = false;
-                    repaint();
+                    // 러버밴드 시작
+                    dragStart = e.getPoint();
+                    dragEnd = e.getPoint();
+                    isRubberBandActive = true;
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (currentTool != null && currentTool.isActive()) {
+                    currentTool.mouseReleased(e);
+                    return;
+                }
+
+                // 리사이징 종료 처리
+                if (resizingShape != null) {
+                    finalizeResizing();
+                    return;
+                }
+
+                // 드래깅 종료 처리
+                if (isDraggingShapes) {
+                    finalizeDragging();
+                    return;
+                }
+
+                // 러버밴드 선택 종료 처리
+                if (isRubberBandActive) {
+                    finalizeRubberBandSelection(e);
                 }
             }
 
@@ -129,60 +121,281 @@ public class CanvasPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseClicked(e);
+                    return;
+                }
+
+                // 텍스트 도형 더블 클릭 시 편집기 표시
+                if (e.getClickCount() == 2) {
+                    Shape clickedShape = findShapeAt(e.getPoint());
+                    if (clickedShape instanceof TextShape) {
+                        showInlineTextEditor((TextShape) clickedShape);
+                    }
                 }
             }
         });
-        
+
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (resizingShape != null && resizingHandle != null && prevMousePoint != null) {
-                    Point curr = e.getPoint();
-                    int dx = curr.x - prevMousePoint.x;
-                    int dy = curr.y - prevMousePoint.y;
-
-                    switch (resizingHandle) {
-                        case BOTTOM_RIGHT -> resizingShape.resize(dx, dy);
-                        case TOP_LEFT -> {
-                            resizingShape.move(dx, dy);
-                            resizingShape.resize(-dx, -dy);
-                        }
-                        case TOP_RIGHT -> {
-                            resizingShape.move(0, dy);
-                            resizingShape.resize(dx, -dy);
-                        }
-                        case BOTTOM_LEFT -> {
-                            resizingShape.move(dx, 0);
-                            resizingShape.resize(-dx, dy);
-                        }
-                    }
-
-                    prevMousePoint = curr;
-                    repaint();
-                    return;
-                }
-
-                if (isDraggingShape && prevMousePoint != null && selectedShape != null) {
-                    Point curr = e.getPoint();
-                    int dx = curr.x - prevMousePoint.x;
-                    int dy = curr.y - prevMousePoint.y;
-
-                    Command moveCommand = new MoveCommand(selectedShape, dx, dy);
-                    commandManager.executeCommand(moveCommand);
-
-                    prevMousePoint = curr;
-                    repaint();
-                    return;
-                }
-
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mouseDragged(e);
-                } else if (isRubberBandActive) {
-                    dragEnd = e.getPoint();
+                    return;
+                }
+
+                Point curr = e.getPoint();
+
+                // 리사이징 중인 경우
+                if (resizingShape != null && resizingHandle != null && prevMousePoint != null) {
+                    handleResizeDrag(curr);
+                    return;
+                }
+
+                // 도형을 드래그하는 경우
+                if (isDraggingShapes && prevMousePoint != null && !selectedShapes.isEmpty()) {
+                    handleShapeDrag(curr);
+                    return;
+                }
+
+                // 러버밴드 드래그
+                if (isRubberBandActive) {
+                    dragEnd = curr;
                     repaint();
                 }
             }
         });
+    }
+
+    // 리사이징 핸들 확인
+    private Shape checkForResizeHandles(Point p) {
+        for (Shape shape : selectedShapes) {
+            for (Map.Entry<HandlePosition, Rectangle> entry : shape.getResizeHandles().entrySet()) {
+                if (entry.getValue().contains(p)) {
+                    resizingShape = shape;
+                    resizingHandle = entry.getKey();
+                    prevMousePoint = p;
+
+                    // 원래 크기 저장
+                    saveOriginalBounds(shape);
+
+                    return shape;
+                }
+            }
+        }
+        return null;
+    }
+
+    // 특정 위치에 있는 도형 찾기
+    private Shape findShapeAt(Point p) {
+        // 역순으로 검색해서 가장 위에 있는(마지막으로 추가된) 도형을 찾음
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            Shape shape = shapes.get(i);
+            if (shape.contains(p.x, p.y)) {
+                return shape;
+            }
+        }
+        return null;
+    }
+
+    // 도형 클릭 처리
+    private void handleShapeClick(Shape clickedShape, MouseEvent e) {
+        boolean isShift = e.isShiftDown();
+
+        // 이미 선택된 도형을 클릭한 경우
+        if (clickedShape.isSelected()) {
+            if (isShift) {
+                // Shift + 클릭으로 선택 해제
+                clickedShape.deselect();
+                selectedShapes.remove(clickedShape);
+                if (selectedShape == clickedShape) {
+                    selectedShape = selectedShapes.isEmpty() ? null : selectedShapes.get(0);
+                }
+                repaint();
+                return;
+            }
+
+            // 하나만 선택된 상태가 아니라면 다른 것들 선택 해제
+            if (selectedShapes.size() > 1 && !isShift) {
+                clearAllSelections();
+                clickedShape.select();
+                selectedShapes.add(clickedShape);
+                selectedShape = clickedShape;
+            }
+
+            // 선택된 도형을 드래그 시작
+            isDraggingShapes = true;
+        } else {
+            // 선택되지 않은 도형을 클릭한 경우
+            if (!isShift) {
+                // Shift 없이 클릭하면 기존 선택 모두 해제
+                clearAllSelections();
+            }
+
+            // 현재 도형 선택
+            clickedShape.select();
+            selectedShapes.add(clickedShape);
+            selectedShape = clickedShape;
+        }
+
+        // 드래그 준비
+        isDraggingShapes = true;
+        prevMousePoint = e.getPoint();
+
+        // 모든 선택된 도형의 원래 위치 저장
+        for (Shape shape : selectedShapes) {
+            saveOriginalBounds(shape);
+        }
+
+        repaint();
+    }
+
+    // 원래 위치와 크기 저장
+    private void saveOriginalBounds(Shape shape) {
+        originalBounds.put(shape, new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight()));
+    }
+
+    // 모든 선택 해제
+    private void clearAllSelections() {
+        for (Shape s : shapes) {
+            s.deselect();
+        }
+        selectedShapes.clear();
+        selectedShape = null;
+        removeInlineTextEditor();
+        repaint();
+    }
+
+    // 리사이징 드래그 처리
+    private void handleResizeDrag(Point curr) {
+        int dx = curr.x - prevMousePoint.x;
+        int dy = curr.y - prevMousePoint.y;
+
+        switch (resizingHandle) {
+            case BOTTOM_RIGHT -> resizingShape.resize(dx, dy);
+            case TOP_LEFT -> {
+                resizingShape.move(dx, dy);
+                resizingShape.resize(-dx, -dy);
+            }
+            case TOP_RIGHT -> {
+                resizingShape.move(0, dy);
+                resizingShape.resize(dx, -dy);
+            }
+            case BOTTOM_LEFT -> {
+                resizingShape.move(dx, 0);
+                resizingShape.resize(-dx, dy);
+            }
+        }
+
+        prevMousePoint = curr;
+        repaint();
+    }
+
+    // 도형 드래그 처리
+    private void handleShapeDrag(Point curr) {
+        int dx = curr.x - prevMousePoint.x;
+        int dy = curr.y - prevMousePoint.y;
+
+        // 선택된 모든 도형 이동
+        for (Shape shape : selectedShapes) {
+            shape.move(dx, dy);
+        }
+
+        prevMousePoint = curr;
+        repaint();
+    }
+
+    // 리사이징 완료 처리
+    private void finalizeResizing() {
+        Rectangle originalRect = originalBounds.get(resizingShape);
+        if (originalRect != null) {
+            int dx = 0;
+            int dy = 0;
+
+            switch (resizingHandle) {
+                case TOP_LEFT -> {
+                    dx = resizingShape.getX() - originalRect.x;
+                    dy = resizingShape.getY() - originalRect.y;
+                }
+                case TOP_RIGHT -> {
+                    dy = resizingShape.getY() - originalRect.y;
+                }
+                case BOTTOM_LEFT -> {
+                    dx = resizingShape.getX() - originalRect.x;
+                }
+            }
+
+            if (dx != 0 || dy != 0 ||
+                resizingShape.getWidth() != originalRect.width ||
+                resizingShape.getHeight() != originalRect.height) {
+
+                Command resizeCmd = new ResizeCommand(
+                    resizingShape,
+                    resizingHandle,
+                    dx,
+                    dy
+                );
+                commandManager.executeCommand(resizeCmd);
+            }
+        }
+
+        resizingShape = null;
+        resizingHandle = null;
+        prevMousePoint = null;
+        originalBounds.clear();
+        repaint();
+    }
+
+    // 드래깅 완료 처리
+    private void finalizeDragging() {
+        if (!selectedShapes.isEmpty()) {
+            // 이동 거리 계산
+            Rectangle firstRect = originalBounds.get(selectedShapes.get(0));
+            if (firstRect != null) {
+                int dx = selectedShapes.get(0).getX() - firstRect.x;
+                int dy = selectedShapes.get(0).getY() - firstRect.y;
+
+                if (dx != 0 || dy != 0) {
+                    // 기존 MoveCommand 사용
+                    Command moveCmd = new MoveCommand(selectedShapes, dx, dy);
+                    commandManager.executeCommand(moveCmd);
+                }
+            }
+        }
+
+        isDraggingShapes = false;
+        prevMousePoint = null;
+        originalBounds.clear();
+        repaint();
+    }
+
+    // 러버밴드 선택 완료 처리
+    private void finalizeRubberBandSelection(MouseEvent e) {
+        dragEnd = e.getPoint();
+        Rectangle box = getRubberBandBounds();
+
+        if (!e.isShiftDown()) {
+            selectedShapes.clear();
+            for (Shape shape : shapes) {
+                shape.deselect();
+            }
+        }
+
+        for (Shape shape : shapes) {
+            Rectangle bounds = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+            if (box.intersects(bounds)) {
+                shape.select();
+                if (!selectedShapes.contains(shape)) {
+                    selectedShapes.add(shape);
+                }
+            }
+        }
+
+        if (!selectedShapes.isEmpty()) {
+            selectedShape = selectedShapes.get(0);
+        }
+
+        dragStart = dragEnd = null;
+        isRubberBandActive = false;
+        repaint();
     }
 
     private Rectangle getRubberBandBounds() {
@@ -191,58 +404,6 @@ public class CanvasPanel extends JPanel {
         int width = Math.abs(dragStart.x - dragEnd.x);
         int height = Math.abs(dragStart.y - dragEnd.y);
         return new Rectangle(x, y, width, height);
-    }
-
-    // 선택 도구일 때 도형 선택 및 텍스트 편집 처리
-    private void handleShapeSelection(MouseEvent e) {
-        int mouseX = e.getX();
-        int mouseY = e.getY();
-        boolean isShift = e.isShiftDown();
-        boolean foundShape = false;
-
-        for (Shape shape : shapes) {
-            if (shape.contains(mouseX, mouseY)) {
-                foundShape = true;
-
-                if (isShift) {
-                    if (selectedShapes.contains(shape)) {
-                        shape.deselect();
-                        selectedShapes.remove(shape);
-                    } else {
-                        shape.select();
-                        selectedShapes.add(shape);
-                    }
-                } else {
-                    // Shift가 안 눌려있으면 도형을 하나만 선택
-                    for (Shape s : shapes) s.deselect();
-                    selectedShapes.clear();
-
-                    shape.select();
-                    selectedShapes.add(shape);
-                    selectedShape = shape;
-                }
-
-                break; // 가장 위에 있는 도형 하나만 처리
-            }
-        }
-
-        // 선택된 도형이 없고, Shift도 안 눌렸으면 전체 선택 해제
-        if (!foundShape && !isShift) {
-            for (Shape s : shapes) s.deselect();
-            selectedShapes.clear();
-            selectedShape = null;
-            removeInlineTextEditor();
-        }
-
-        // 텍스트 편집기
-        if (!isShift && selectedShape instanceof TextShape) {
-            TextShape textShape = (TextShape) selectedShape;
-            showInlineTextEditor(textShape);
-        } else {
-            removeInlineTextEditor();
-        }
-
-        repaint();
     }
 
     public void addShape(Shape shape) {
@@ -260,15 +421,15 @@ public class CanvasPanel extends JPanel {
         currentTool = tool;
         if (currentTool != null) currentTool.activate();
     }
-    
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        
+
         // Enable anti-aliasing for smoother graphics
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
-                           RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
 
         for (Shape shape : shapes) {
             shape.draw(g2d);
@@ -312,7 +473,16 @@ public class CanvasPanel extends JPanel {
         textEditor.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                textShape.setText(textEditor.getText());
+                String oldText = textShape.getText();
+                String newText = textEditor.getText();
+
+                Command changeText = new PropertyChangeCommand<>(
+                    textShape::setText,
+                    oldText,
+                    newText
+                );
+                commandManager.executeCommand(changeText);
+                textShape.setText(newText);
                 removeInlineTextEditor();
                 repaint();
             }
@@ -330,4 +500,4 @@ public class CanvasPanel extends JPanel {
             repaint();
         }
     }
-} 
+}
