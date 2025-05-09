@@ -1,5 +1,8 @@
 package com.vector.editor;
 
+import com.vector.editor.command.AddShapeCommand;
+import com.vector.editor.command.Command;
+import com.vector.editor.command.CommandManager;
 import com.vector.editor.core.Shape;
 import com.vector.editor.core.Shape.HandlePosition;
 import com.vector.editor.shapes.GroupShape;
@@ -17,6 +20,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class CanvasPanel extends JPanel {
+    private CommandManager commandManager;
+
     private static final Color BACKGROUND_COLOR = Color.WHITE;
 
     private List<Shape> shapes = new ArrayList<>();
@@ -34,7 +39,9 @@ public class CanvasPanel extends JPanel {
     private HandlePosition resizingHandle = null;
     private Point prevMousePoint = null;
     
-    public CanvasPanel() {
+    public CanvasPanel(CommandManager commandManager) {
+        this.commandManager = commandManager;
+
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(800, 600));
         
@@ -213,7 +220,8 @@ public class CanvasPanel extends JPanel {
     }
 
     public void addShape(Shape shape) {
-        shapes.add(shape);
+        Command addCmd = new AddShapeCommand(shapes, shape);
+        commandManager.executeCommand(addCmd);
         repaint();
     }
 

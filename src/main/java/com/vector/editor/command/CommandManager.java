@@ -1,14 +1,16 @@
 package com.vector.editor.command;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Stack;
 
 public class CommandManager {
-    private Stack<Command> undoStack;
-    private Stack<Command> redoStack;
+    private Deque<Command> undoStack;
+    private Deque<Command> redoStack;
 
     public CommandManager() {
-        undoStack = new Stack<>();
-        redoStack = new Stack<>();
+        undoStack = new ArrayDeque<>();
+        redoStack = new ArrayDeque<>();
     }
 
     public void executeCommand(Command command) {

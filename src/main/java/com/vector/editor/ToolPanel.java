@@ -1,5 +1,6 @@
 package com.vector.editor;
 
+import com.vector.editor.command.CommandManager;
 import com.vector.editor.shapes.ImageShape;
 import com.vector.editor.tools.FreeDrawTool;
 import com.vector.editor.tools.RectangleTool;
@@ -13,14 +14,17 @@ import java.awt.event.ActionListener;
 
 public class ToolPanel extends JPanel {
     private CanvasPanel canvasPanel;
+    private CommandManager commandManager;
+
     private static final int BUTTON_SIZE = 50;
     private static final int PANEL_WIDTH = 100;
 
     private Color strokeColor = Color.BLACK;
     private int strokeWidth = 1;
     
-    public ToolPanel(CanvasPanel canvasPanel) {
+    public ToolPanel(CanvasPanel canvasPanel, CommandManager commandManager) {
         this.canvasPanel = canvasPanel;
+        this.commandManager = commandManager;
 
         setPreferredSize(new Dimension(PANEL_WIDTH, 600));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
