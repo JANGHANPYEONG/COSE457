@@ -51,6 +51,8 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     private final Map<Shape, Rectangle> beforeResizeBounds = new HashMap<>();
     private final Map<Shape, Rectangle> afterResizeBounds = new HashMap<>();
 
+    private final Map<Shape, Point> beforeMoveStates = new HashMap<>();
+
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
         this.toolManager = new ToolManager(this);
@@ -252,7 +254,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
         // 모든 선택된 도형의 원래 위치 저장
         for (Shape shape : selectedShapes) {
-            saveBeforeResizeBounds(shape);
+            beforeMoveStates.put(shape, new Point(shape.getX(), shape.getY()));
         }
 
         repaint();
@@ -337,23 +339,34 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     // 드래깅 완료 처리
     private void finalizeDragging() {
         if (!selectedShapes.isEmpty()) {
-            Rectangle firstRect = beforeResizeBounds.get(selectedShapes.get(0));
-            if (firstRect != null) {
-                int dx = selectedShapes.get(0).getX() - firstRect.x;
-                int dy = selectedShapes.get(0).getY() - firstRect.y;
+            Map<Shape, Point> afterMoveStates = new HashMap<>();
 
-                if (dx != 0 || dy != 0) {
-                    Command moveCmd = new MoveCommand(selectedShapes, dx, dy);
-                    commandManager.executeCommand(moveCmd);
-                }
+            for (Shape shape : selectedShapes) {
+                afterMoveStates.put(shape, new Point(shape.getX(), shape.getY()));
+            }
+
+            boolean moved = selectedShapes.stream().anyMatch(shape -> {
+                Point before = beforeMoveStates.get(shape);
+                Point after = afterMoveStates.get(shape);
+                return before != null && (before.x != after.x || before.y != after.y);
+            });
+
+            if (moved) {
+                Command moveCmd = new MoveCommand(
+                    new ArrayList<>(selectedShapes),
+                    new HashMap<>(beforeMoveStates),
+                    afterMoveStates
+                );
+                commandManager.executeCommand(moveCmd);
             }
         }
 
         isDraggingShapes = false;
         prevMousePoint = null;
-        beforeResizeBounds.clear();
+        beforeMoveStates.clear();
         repaint();
     }
+
 
     // 러버밴드 선택 완료 처리
     private void finalizeRubberBandSelection(MouseEvent e) {
@@ -397,7 +410,6 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     public void addShape(Shape shape) {
         Command addCmd = new AddShapeCommand(shapes, shape);
         commandManager.executeCommand(addCmd);
-        shape.addObserver((ShapeObserver) this);
         repaint();
     }
 
