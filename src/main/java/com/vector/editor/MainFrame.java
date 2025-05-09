@@ -1,5 +1,6 @@
 package com.vector.editor;
 
+import com.vector.editor.command.CommandManager;
 import javax.swing.*;
 import java.awt.*;
 
@@ -9,6 +10,7 @@ public class MainFrame extends JFrame {
     
     private CanvasPanel canvasPanel;
     private ToolPanel toolPanel;
+    private CommandManager commandManager;
     
     public MainFrame() {
         setTitle("Vector Graphics Editor");
@@ -17,8 +19,9 @@ public class MainFrame extends JFrame {
         setLayout(new BorderLayout());
         
         // Initialize components
-        canvasPanel = new CanvasPanel();
-        toolPanel = new ToolPanel(canvasPanel);
+        commandManager = new CommandManager();
+        canvasPanel = new CanvasPanel(commandManager);
+        toolPanel = new ToolPanel(canvasPanel, commandManager);
         
         // Add components to frame
         add(toolPanel, BorderLayout.WEST);

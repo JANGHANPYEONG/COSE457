@@ -106,6 +106,17 @@ public abstract class Shape {
     public int getStrokeWidth() { return strokeWidth; }
     public boolean isSelected() { return selected; }
 
+    public void setPosition(int x, int y) {
+        this.x = x;
+        this.y = y;
+        notifyObservers();
+    }
+    public void setSize(int w, int h) {
+        this.width = w;
+        this.height = h;
+        notifyObservers();
+    }
+
     public void setFillColor(Color fillColor) {
         this.fillColor = fillColor;
         notifyObservers();

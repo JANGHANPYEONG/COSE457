@@ -1,11 +1,13 @@
 package com.vector.editor;
 
+import com.vector.editor.command.CommandManager;
 import com.vector.editor.shapes.ImageShape;
 import com.vector.editor.tools.FreeDrawTool;
 import com.vector.editor.tools.RectangleTool;
 import com.vector.editor.tools.LineTool;
 import com.vector.editor.tools.TextTool;
 import com.vector.editor.utils.ImageLoader;
+import java.awt.event.KeyEvent;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -13,14 +15,17 @@ import java.awt.event.ActionListener;
 
 public class ToolPanel extends JPanel {
     private CanvasPanel canvasPanel;
+    private CommandManager commandManager;
+
     private static final int BUTTON_SIZE = 50;
     private static final int PANEL_WIDTH = 100;
 
     private Color strokeColor = Color.BLACK;
     private int strokeWidth = 1;
     
-    public ToolPanel(CanvasPanel canvasPanel) {
+    public ToolPanel(CanvasPanel canvasPanel, CommandManager commandManager) {
         this.canvasPanel = canvasPanel;
+        this.commandManager = commandManager;
 
         setPreferredSize(new Dimension(PANEL_WIDTH, 600));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -45,20 +50,7 @@ public class ToolPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Selected: " + tooltip);
 
-                switch (tooltip) {
-                    case "Rectangle":
-                        canvasPanel.setCurrentTool(new RectangleTool(canvasPanel));
-                        break;
-                    case "Line":
-                        canvasPanel.setCurrentTool(new LineTool(canvasPanel));
-                        break;
-                    case "Text":
-                        canvasPanel.setCurrentTool(new TextTool(canvasPanel));
-                        break;
-                    case "Free Draw":
-                        canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
-                        break;
-                }
+                canvasPanel.getToolManager().setCurrentTool(tooltip);
             }
         });
         add(button);
@@ -88,6 +80,72 @@ public class ToolPanel extends JPanel {
 
         add(imageButton);
         add(Box.createVerticalStrut(5));
+    }
+
+    private void addUndoRedoButtons() {
+        // Undo button panel
+        JPanel undoPanel = new JPanel();
+        undoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        undoPanel.setMaximumSize(new Dimension(PANEL_WIDTH - 20, BUTTON_SIZE));
+        undoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Undo button
+        JButton undoButton = new JButton("↩");
+        undoButton.setToolTipText("Undo (Ctrl+Z)");
+        undoButton.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        undoButton.addActionListener(e -> {
+            if (commandManager.canUndo()) {
+                commandManager.undo();
+                canvasPanel.repaint();
+            }
+        });
+
+        // Redo button
+        JButton redoButton = new JButton("↪");
+        redoButton.setToolTipText("Redo (Ctrl+Y)");
+        redoButton.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        redoButton.addActionListener(e -> {
+            if (commandManager.canRedo()) {
+                commandManager.redo();
+                canvasPanel.repaint();
+            }
+        });
+
+        undoPanel.add(undoButton);
+        undoPanel.add(redoButton);
+
+        add(undoPanel);
+        add(Box.createVerticalStrut(10));
+
+        // 키보드 단축키 추가 (Ctrl+Z, Ctrl+Y)
+        setupKeyboardShortcuts(undoButton, redoButton);
+    }
+
+    private void setupKeyboardShortcuts(JButton undoButton, JButton redoButton) {
+        // Undo 단축키 (Ctrl+Z)
+        InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = getActionMap();
+
+        KeyStroke undoKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_Z,
+            Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        inputMap.put(undoKeyStroke, "undo");
+        actionMap.put("undo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                undoButton.doClick();
+            }
+        });
+
+        // Redo 단축키 (Ctrl+Y)
+        KeyStroke redoKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_Y,
+            Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        inputMap.put(redoKeyStroke, "redo");
+        actionMap.put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                redoButton.doClick();
+            }
+        });
     }
 
     public void setStrokeColor(Color strokeColor) {

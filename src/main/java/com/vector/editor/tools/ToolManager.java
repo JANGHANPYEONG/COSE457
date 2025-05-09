@@ -35,6 +35,7 @@ public class ToolManager {
             }
             currentTool = newTool;
             currentTool.activate();
+            canvas.repaint();
         }
     }
     
@@ -46,6 +47,7 @@ public class ToolManager {
         if (currentTool != null) {
             currentTool.deactivate();
             currentTool = null;
+            canvas.repaint();
         }
     }
 } 
