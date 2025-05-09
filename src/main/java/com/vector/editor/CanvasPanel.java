@@ -482,6 +482,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
                 String newText = textEditor.getText();
 
                 Command changeText = new PropertyChangeCommand<>(
+                    textShape::getText,
                     textShape::setText,
                     oldText,
                     newText
