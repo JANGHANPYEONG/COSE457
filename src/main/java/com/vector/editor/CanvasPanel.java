@@ -3,6 +3,7 @@ package com.vector.editor;
 import com.vector.editor.command.AddShapeCommand;
 import com.vector.editor.command.Command;
 import com.vector.editor.command.CommandManager;
+import com.vector.editor.command.MoveCommand;
 import com.vector.editor.core.Shape;
 import com.vector.editor.core.Shape.HandlePosition;
 import com.vector.editor.shapes.GroupShape;
@@ -35,6 +36,8 @@ public class CanvasPanel extends JPanel {
 
     private Tool currentTool;
 
+    private boolean isDraggingShape = false;
+    private Point dragOffset = null;
     private Shape resizingShape = null;
     private HandlePosition resizingHandle = null;
     private Point prevMousePoint = null;
@@ -52,6 +55,7 @@ public class CanvasPanel extends JPanel {
                 Point p = e.getPoint();
                 resizingShape = null;
                 resizingHandle = null;
+                isDraggingShape = false;
 
                 for (Shape shape : shapes) {
                     if (shape.isSelected()) {
@@ -62,6 +66,15 @@ public class CanvasPanel extends JPanel {
                                 prevMousePoint = p;
                                 return;
                             }
+                        }
+
+                        // 리사이징 핸들이 아닌 도형 내부를 클릭했을 경우
+                        if (shape.contains(p.x, p.y)) {
+                            resizingShape = null;
+                            resizingHandle = null;
+                            isDraggingShape = true;
+                            prevMousePoint = p;
+                            return;
                         }
                     }
                 }
@@ -143,6 +156,19 @@ public class CanvasPanel extends JPanel {
                             resizingShape.resize(-dx, dy);
                         }
                     }
+
+                    prevMousePoint = curr;
+                    repaint();
+                    return;
+                }
+
+                if (isDraggingShape && prevMousePoint != null && selectedShape != null) {
+                    Point curr = e.getPoint();
+                    int dx = curr.x - prevMousePoint.x;
+                    int dy = curr.y - prevMousePoint.y;
+
+                    Command moveCommand = new MoveCommand(selectedShape, dx, dy);
+                    commandManager.executeCommand(moveCommand);
 
                     prevMousePoint = curr;
                     repaint();
