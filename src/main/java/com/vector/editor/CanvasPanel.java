@@ -328,7 +328,7 @@ public class CanvasPanel extends JPanel {
                 resizingShape.getHeight() != originalRect.height) {
 
                 Command resizeCmd = new ResizeCommand(
-                    resizingShape,
+                    selectedShapes,
                     resizingHandle,
                     dx,
                     dy
