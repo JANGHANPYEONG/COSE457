@@ -22,9 +22,7 @@ public class MoveCommand implements Command {
 
     @Override
     public void execute() {
-        for (Shape shape: shapes) {
-            shape.move(dx, dy);
-        }
+
     }
 
     @Override
