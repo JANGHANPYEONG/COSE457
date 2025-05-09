@@ -49,20 +49,7 @@ public class ToolPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Selected: " + tooltip);
 
-                switch (tooltip) {
-                    case "Rectangle":
-                        canvasPanel.setCurrentTool(new RectangleTool(canvasPanel));
-                        break;
-                    case "Line":
-                        canvasPanel.setCurrentTool(new LineTool(canvasPanel));
-                        break;
-                    case "Text":
-                        canvasPanel.setCurrentTool(new TextTool(canvasPanel));
-                        break;
-                    case "Free Draw":
-                        canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
-                        break;
-                }
+                canvasPanel.getToolManager().setCurrentTool(tooltip);
             }
         });
         add(button);

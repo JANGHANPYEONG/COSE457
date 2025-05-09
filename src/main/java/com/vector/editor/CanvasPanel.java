@@ -11,6 +11,7 @@ import com.vector.editor.core.Shape.HandlePosition;
 import com.vector.editor.shapes.GroupShape;
 import com.vector.editor.shapes.TextShape;
 import com.vector.editor.tools.Tool;
+import com.vector.editor.tools.ToolManager;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.awt.event.MouseMotionAdapter;
 
 public class CanvasPanel extends JPanel {
     private final CommandManager commandManager;
+    private final ToolManager toolManager;
 
     private static final Color BACKGROUND_COLOR = Color.WHITE;
 
@@ -49,6 +51,7 @@ public class CanvasPanel extends JPanel {
 
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
+        this.toolManager = new ToolManager(this);
 
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(800, 600));
@@ -60,6 +63,7 @@ public class CanvasPanel extends JPanel {
                 Point p = e.getPoint();
 
                 // 현재 도구가 활성화되어 있으면 도구에 마우스 이벤트 위임
+                Tool currentTool = toolManager.getCurrentTool();
                 if (currentTool != null && currentTool.isActive()) {
                     currentTool.mousePressed(e);
                     return;
@@ -416,10 +420,8 @@ public class CanvasPanel extends JPanel {
         return shapes;
     }
 
-    public void setCurrentTool(Tool tool) {
-        if (currentTool != null) currentTool.deactivate();
-        currentTool = tool;
-        if (currentTool != null) currentTool.activate();
+    public ToolManager getToolManager() {
+        return toolManager;
     }
 
     @Override
@@ -445,6 +447,7 @@ public class CanvasPanel extends JPanel {
             g2d.draw(box);
         }
 
+        Tool currentTool = toolManager.getCurrentTool();
         if (currentTool != null && currentTool.isActive()) {
             currentTool.draw(g2d);
         }
