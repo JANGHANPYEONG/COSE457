@@ -37,6 +37,7 @@ public class ToolPanel extends JPanel {
         addShapeButton("Text", "T");
         addShapeButton("Free Draw", "F");
         addImageButton();
+        addUndoRedoButtons();
     }
     
     private void addShapeButton(String tooltip, String text) {
@@ -50,7 +51,20 @@ public class ToolPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Selected: " + tooltip);
 
-                canvasPanel.getToolManager().setCurrentTool(tooltip);
+//                switch (tooltip) {
+//                    case "Rectangle":
+//                        canvasPanel.setCurrentTool(new RectangleTool(canvasPanel));
+//                        break;
+//                    case "Line":
+//                        canvasPanel.setCurrentTool(new LineTool(canvasPanel));
+//                        break;
+//                    case "Text":
+//                        canvasPanel.setCurrentTool(new TextTool(canvasPanel));
+//                        break;
+//                    case "Free Draw":
+//                        canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
+//                        break;
+//                }
             }
         });
         add(button);
@@ -83,16 +97,14 @@ public class ToolPanel extends JPanel {
     }
 
     private void addUndoRedoButtons() {
-        // Undo button panel
-        JPanel undoPanel = new JPanel();
-        undoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        undoPanel.setMaximumSize(new Dimension(PANEL_WIDTH - 20, BUTTON_SIZE));
-        undoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         // Undo button
         JButton undoButton = new JButton("↩");
         undoButton.setToolTipText("Undo (Ctrl+Z)");
+
         undoButton.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        undoButton.setMaximumSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        undoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         undoButton.addActionListener(e -> {
             if (commandManager.canUndo()) {
                 commandManager.undo();
@@ -103,7 +115,11 @@ public class ToolPanel extends JPanel {
         // Redo button
         JButton redoButton = new JButton("↪");
         redoButton.setToolTipText("Redo (Ctrl+Y)");
+
         redoButton.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        redoButton.setMaximumSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        redoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         redoButton.addActionListener(e -> {
             if (commandManager.canRedo()) {
                 commandManager.redo();
@@ -111,11 +127,10 @@ public class ToolPanel extends JPanel {
             }
         });
 
-        undoPanel.add(undoButton);
-        undoPanel.add(redoButton);
-
-        add(undoPanel);
-        add(Box.createVerticalStrut(10));
+        add(undoButton);
+        add(Box.createVerticalStrut(5));
+        add(redoButton);
+        add(Box.createVerticalStrut(5));
 
         // 키보드 단축키 추가 (Ctrl+Z, Ctrl+Y)
         setupKeyboardShortcuts(undoButton, redoButton);
