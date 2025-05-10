@@ -40,8 +40,6 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     private Point dragEnd = null;
     private boolean isRubberBandActive = false;
 
-    private Tool currentTool;
-
     private boolean isDraggingShapes = false;
     private Shape resizingShape = null;
     private HandlePosition resizingHandle = null;
@@ -52,6 +50,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     private final Map<Shape, Rectangle> afterResizeBounds = new HashMap<>();
 
     private final Map<Shape, Point> beforeMoveStates = new HashMap<>();
+    private StatePanel statePanel;
 
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
@@ -64,6 +63,9 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                if (statePanel != null) {
+                    statePanel.updateMousePosition(e.getX(), e.getY());
+                }
                 Point p = e.getPoint();
 
                 // 현재 도구가 활성화되어 있으면 도구에 마우스 이벤트 위임
@@ -102,8 +104,9 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (currentTool != null && currentTool.isActive()) {
-                    currentTool.mouseReleased(e);
+                Tool tool = toolManager.getCurrentTool();
+                if (tool != null && tool.isActive()) {
+                    tool.mouseReleased(e);
                     return;
                 }
 
@@ -127,8 +130,12 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (currentTool != null && currentTool.isActive()) {
-                    currentTool.mouseClicked(e);
+                if (statePanel != null) {
+                    statePanel.updateMousePosition(e.getX(), e.getY());
+                }
+                Tool tool = toolManager.getCurrentTool();
+                if (tool != null && tool.isActive()) {
+                    tool.mouseClicked(e);
                     return;
                 }
 
@@ -144,9 +151,20 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
+            public void mouseMoved(MouseEvent e) {
+                if (statePanel != null) {
+                    statePanel.updateMousePosition(e.getX(), e.getY());
+                }
+            }
+
+            @Override
             public void mouseDragged(MouseEvent e) {
-                if (currentTool != null && currentTool.isActive()) {
-                    currentTool.mouseDragged(e);
+                if (statePanel != null) {
+                    statePanel.updateMousePosition(e.getX(), e.getY());
+                }
+                Tool tool = toolManager.getCurrentTool();
+                if (tool != null && tool.isActive()) {
+                    tool.mouseDragged(e);
                     return;
                 }
 
@@ -210,47 +228,30 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
     // 도형 클릭 처리
     private void handleShapeClick(Shape clickedShape, MouseEvent e) {
-        boolean isShift = e.isShiftDown();
-
-        // 이미 선택된 도형을 클릭한 경우
-        if (clickedShape.isSelected()) {
-            if (isShift) {
-                // Shift + 클릭으로 선택 해제
-                clickedShape.deselect();
-                selectedShapes.remove(clickedShape);
-                if (selectedShape == clickedShape) {
-                    selectedShape = selectedShapes.isEmpty() ? null : selectedShapes.get(0);
-                }
-                repaint();
-                return;
+        if (!e.isShiftDown()) {
+            // Shift 키가 눌려있지 않으면 모든 선택 해제
+            for (Shape shape : shapes) {
+                shape.deselect();
             }
-
-            // 하나만 선택된 상태가 아니라면 다른 것들 선택 해제
-            if (selectedShapes.size() > 1 && !isShift) {
-                clearAllSelections();
-                clickedShape.select();
-                selectedShapes.add(clickedShape);
-                selectedShape = clickedShape;
-            }
-
-            // 선택된 도형을 드래그 시작
-            isDraggingShapes = true;
-        } else {
-            // 선택되지 않은 도형을 클릭한 경우
-            if (!isShift) {
-                // Shift 없이 클릭하면 기존 선택 모두 해제
-                clearAllSelections();
-            }
-
-            // 현재 도형 선택
-            clickedShape.select();
-            selectedShapes.add(clickedShape);
-            selectedShape = clickedShape;
+            selectedShapes.clear();
         }
 
-        // 드래그 준비
-        isDraggingShapes = true;
+        // 클릭한 도형 선택
+        clickedShape.select();
+        if (!selectedShapes.contains(clickedShape)) {
+            selectedShapes.add(clickedShape);
+        }
+        selectedShape = clickedShape;
+
+        // StatePanel 업데이트
+        if (statePanel != null) {
+            statePanel.updateShapeInfo(clickedShape);
+        }
+
+        // 드래그 시작 지점 저장
+        dragStart = e.getPoint();
         prevMousePoint = e.getPoint();
+        isDraggingShapes = true;
 
         // 모든 선택된 도형의 원래 위치 저장
         for (Shape shape : selectedShapes) {
@@ -261,7 +262,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     }
 
     // 모든 선택 해제
-    private void clearAllSelections() {
+    public void clearAllSelections() {
         for (Shape s : shapes) {
             s.deselect();
         }
@@ -277,19 +278,21 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
         int dy = curr.y - prevMousePoint.y;
 
         switch (resizingHandle) {
-            case BOTTOM_RIGHT -> resizingShape.resize(dx, dy);
-            case TOP_LEFT -> {
+            case BOTTOM_RIGHT:
+                resizingShape.resize(dx, dy);
+                break;
+            case TOP_LEFT:
                 resizingShape.move(dx, dy);
                 resizingShape.resize(-dx, -dy);
-            }
-            case TOP_RIGHT -> {
+                break;
+            case TOP_RIGHT:
                 resizingShape.move(0, dy);
                 resizingShape.resize(dx, -dy);
-            }
-            case BOTTOM_LEFT -> {
+                break;
+            case BOTTOM_LEFT:
                 resizingShape.move(dx, 0);
                 resizingShape.resize(-dx, dy);
-            }
+                break;
         }
 
         prevMousePoint = curr;
@@ -410,11 +413,15 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     public void addShape(Shape shape) {
         Command addCmd = new AddShapeCommand(shapes, shape);
         commandManager.executeCommand(addCmd);
+        shape.addObserver(this);  // Add CanvasPanel as an observer
         repaint();
     }
 
     @Override
     public void onShapeChanged(Shape shape) {
+        if (statePanel != null && shape != null) {
+            statePanel.updateShapeInfo(shape);
+        }
         repaint();
     }
 
@@ -424,6 +431,10 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
 
     public ToolManager getToolManager() {
         return toolManager;
+    }
+
+    public List<Shape> getSelectedShapes() {
+        return selectedShapes;
     }
 
     @Override
@@ -449,9 +460,9 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
             g2d.draw(box);
         }
 
-        Tool currentTool = toolManager.getCurrentTool();
-        if (currentTool != null && currentTool.isActive()) {
-            currentTool.draw(g2d);
+        Tool tool = toolManager.getCurrentTool();
+        if (tool != null && tool.isActive()) {
+            tool.draw(g2d);
         }
     }
 
@@ -505,5 +516,20 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
             revalidate();
             repaint();
         }
+    }
+
+    public void setStatePanel(StatePanel statePanel) {
+        this.statePanel = statePanel;
+    }
+
+    public void setCurrentTool(String toolName) {
+        toolManager.setCurrentTool(toolName);
+        if (statePanel != null) {
+            statePanel.updateToolState(toolName);
+        }
+    }
+
+    public StatePanel getStatePanel() {
+        return statePanel;
     }
 }

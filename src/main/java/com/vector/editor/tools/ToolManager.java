@@ -19,6 +19,7 @@ public class ToolManager {
         // 기본 도구들 등록
         registerTool("selection", new SelectionTool(canvas));
         registerTool("rectangle", new RectangleTool(canvas));
+        registerTool("ellipse", new EllipseTool(canvas));
         registerTool("line", new LineTool(canvas));
         registerTool("text", new TextTool(canvas));
     }

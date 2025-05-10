@@ -17,8 +17,10 @@ public class EllipseShape extends Shape {
         Graphics2D g2 = (Graphics2D) g; // Graphics2D로 변환
 
         // 도형 내부 채우기
-        g2.setColor(fillColor);
-        g2.fillOval(x, y, width, height);
+        if (fillColor != null) {
+            g2.setColor(fillColor);
+            g2.fillOval(x, y, width, height);
+        }
 
         // 도형 외곽선
         g2.setColor(strokeColor); // 색

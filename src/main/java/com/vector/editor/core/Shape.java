@@ -91,7 +91,9 @@ public abstract class Shape {
     }
 
     protected void notifyObservers() {
-        for (ShapeObserver observer : observers) {
+        // Create a copy of the observers list to avoid ConcurrentModificationException
+        List<ShapeObserver> observersCopy = new ArrayList<>(observers);
+        for (ShapeObserver observer : observersCopy) {
             observer.onShapeChanged(this);
         }
     }

@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import com.vector.editor.core.ColorManager;
 
 public class FreeDrawTool implements Tool {
     private Color strokeColor;
@@ -26,7 +27,7 @@ public class FreeDrawTool implements Tool {
             e.getX(), e.getY(),
             0, 0,
             null, // fillColor 없음
-            strokeColor,
+            ColorManager.getInstance().getCurrentColor(),
             strokeWidth
         );
         currentPath.addPoint(e.getPoint());

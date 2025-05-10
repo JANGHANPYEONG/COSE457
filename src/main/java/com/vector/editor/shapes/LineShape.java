@@ -30,7 +30,9 @@ public class LineShape extends Shape {
         g2.setStroke(new BasicStroke(strokeWidth));
         g2.drawLine(x, y, x + width, y + height);
 
-        drawSelectionUI(g2);
+        if (isSelected()) {
+            drawSelectionUI(g2);
+        }
     }
 
     @Override

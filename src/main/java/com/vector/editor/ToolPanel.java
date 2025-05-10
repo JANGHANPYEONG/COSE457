@@ -31,44 +31,31 @@ public class ToolPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Add shape buttons
-        addShapeButton("Rectangle", "R");
-        addShapeButton("Line", "L");
-        addShapeButton("Text", "T");
-        addShapeButton("Free Draw", "F");
+        // Add tool buttons
+        addToolButton("Selection", "S", "selection");
+        addToolButton("Rectangle", "R", "rectangle");
+        addToolButton("Ellipse", "E", "ellipse");
+        addToolButton("Line", "L", "line");
+        addToolButton("Text", "T", "text");
+        addToolButton("Free Draw", "F", "freedraw");
         addImageButton();
         addUndoRedoButtons();
+
+        // FreeDrawTool은 ToolManager에 동적으로 등록 필요
+        canvasPanel.getToolManager().registerTool("freedraw", new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
     }
     
-    private void addShapeButton(String tooltip, String text) {
-        JButton button = new JButton(text);
-        button.setToolTipText(tooltip);
+    private void addToolButton(String name, String shortcut, String toolId) {
+        JButton button = new JButton(name);
         button.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
         button.setMaximumSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("Selected: " + tooltip);
-
-//                switch (tooltip) {
-//                    case "Rectangle":
-//                        canvasPanel.setCurrentTool(new RectangleTool(canvasPanel));
-//                        break;
-//                    case "Line":
-//                        canvasPanel.setCurrentTool(new LineTool(canvasPanel));
-//                        break;
-//                    case "Text":
-//                        canvasPanel.setCurrentTool(new TextTool(canvasPanel));
-//                        break;
-//                    case "Free Draw":
-//                        canvasPanel.setCurrentTool(new FreeDrawTool(canvasPanel, strokeColor, strokeWidth));
-//                        break;
-//                }
-            }
+        button.setToolTipText(shortcut);
+        
+        button.addActionListener(e -> {
+            canvasPanel.setCurrentTool(toolId);
         });
+        
         add(button);
-        add(Box.createVerticalStrut(5));
     }
 
     private void addImageButton() {

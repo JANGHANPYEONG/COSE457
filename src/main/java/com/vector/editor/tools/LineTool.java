@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Color;
 import com.vector.editor.shapes.LineShape;
 import com.vector.editor.CanvasPanel;
+import com.vector.editor.core.ColorManager;
 
 public class LineTool implements Tool {
     private boolean active = false;
@@ -28,8 +29,9 @@ public class LineTool implements Tool {
         isDragging = true;
         
         // 새로운 선 도형 생성
+        Color color = ColorManager.getInstance().getCurrentColor();
         currentShape = new LineShape(startPoint.x, startPoint.y, currentPoint.x, currentPoint.y, 
-            Color.BLACK, 1);
+            color, 1);
     }
 
     @Override

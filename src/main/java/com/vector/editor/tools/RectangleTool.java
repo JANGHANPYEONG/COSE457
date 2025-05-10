@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Color;
 import com.vector.editor.shapes.RectangleShape;
 import com.vector.editor.CanvasPanel;
+import com.vector.editor.core.ColorManager;
 
 public class RectangleTool implements Tool {
     private boolean active = false;
@@ -28,8 +29,9 @@ public class RectangleTool implements Tool {
         isDragging = true;
         
         // 새로운 사각형 도형 생성
+        Color color = ColorManager.getInstance().getCurrentColor();
         currentShape = new RectangleShape(startPoint.x, startPoint.y, 0, 0, 
-            Color.WHITE, Color.BLACK, 1);
+            null, color, 1);
     }
 
     @Override

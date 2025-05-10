@@ -8,139 +8,240 @@ import java.util.List;
 import java.util.ArrayList;
 import com.vector.editor.core.Shape;
 import com.vector.editor.CanvasPanel;
+import java.awt.Graphics2D;
+import java.awt.Color;
+import java.awt.BasicStroke;
+import java.util.Map;
 
 public class SelectionTool implements Tool {
+    private enum Mode { NONE, RESIZE, MOVE, SELECTION_BOX }
     private boolean active = false;
     private Point startPoint;
     private Point currentPoint;
     private boolean isDragging = false;
-    private List<Shape> selectedShapes;
     private CanvasPanel canvas;
+
+    // 추가: 리사이즈/이동 상태 관리
+    private Mode currentMode = Mode.NONE;
+    private Shape resizingShape = null;
+    private Shape movingShape = null;
+    private Shape.HandlePosition resizingHandle = null;
+    private Point prevMousePoint = null;
 
     public SelectionTool(CanvasPanel canvas) {
         this.canvas = canvas;
-        this.selectedShapes = new ArrayList<>();
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
         if (!active) return;
-        
-        startPoint = e.getPoint();
+        Point p = e.getPoint();
+        currentMode = Mode.NONE;
+        resizingShape = null;
+        movingShape = null;
+        resizingHandle = null;
+        prevMousePoint = null;
+
+        // 1. 리사이즈 핸들 클릭 여부 확인
+        for (Shape shape : canvas.getShapes()) {
+            if (!shape.isSelected()) continue;
+            for (Map.Entry<Shape.HandlePosition, Rectangle> entry : shape.getResizeHandles().entrySet()) {
+                if (entry.getValue().contains(p)) {
+                    currentMode = Mode.RESIZE;
+                    resizingShape = shape;
+                    resizingHandle = entry.getKey();
+                    prevMousePoint = p;
+                    return;
+                }
+            }
+        }
+
+        // 2. 선택된 도형 내부 클릭(이동)
+        for (int i = canvas.getShapes().size() - 1; i >= 0; i--) {
+            Shape shape = canvas.getShapes().get(i);
+            if (shape.isSelected() && shape.contains(p.x, p.y)) {
+                currentMode = Mode.MOVE;
+                movingShape = shape;
+                prevMousePoint = p;
+                return;
+            }
+        }
+
+        // 3. 그 외: 선택 박스
+        startPoint = p;
         currentPoint = startPoint;
         isDragging = true;
-        
-        // 선택 영역 내의 도형들을 찾아서 selectedShapes에 추가
-        Rectangle selectionRect = new Rectangle(
-            Math.min(startPoint.x, currentPoint.x),
-            Math.min(startPoint.y, currentPoint.y),
-            Math.abs(currentPoint.x - startPoint.x),
-            Math.abs(currentPoint.y - startPoint.y)
-        );
-        
-        selectedShapes.clear();
-        for (Shape shape : canvas.getShapes()) {
-            if (shape.intersects(selectionRect)) {
-                selectedShapes.add(shape);
-                shape.select();
-            }
+        currentMode = Mode.SELECTION_BOX;
+        if (!e.isShiftDown()) {
+            canvas.clearAllSelections();
         }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
         if (!active) return;
-        
-        currentPoint = e.getPoint();
-        isDragging = false;
-        
-        // 선택 영역 내의 도형들을 최종적으로 선택
-        Rectangle selectionRect = new Rectangle(
-            Math.min(startPoint.x, currentPoint.x),
-            Math.min(startPoint.y, currentPoint.y),
-            Math.abs(currentPoint.x - startPoint.x),
-            Math.abs(currentPoint.y - startPoint.y)
-        );
-        
-        for (Shape shape : canvas.getShapes()) {
-            if (shape.intersects(selectionRect)) {
-                if (!selectedShapes.contains(shape)) {
-                    selectedShapes.add(shape);
-                    shape.select();
+        Point p = e.getPoint();
+        switch (currentMode) {
+            case RESIZE:
+            case MOVE:
+                // 리사이즈나 이동이 완료되면 상태 초기화
+                break;
+            case SELECTION_BOX:
+                currentPoint = p;
+                isDragging = false;
+                // 드래그 영역 내 도형 선택
+                Rectangle selectionRect = new Rectangle(
+                    Math.min(startPoint.x, currentPoint.x),
+                    Math.min(startPoint.y, currentPoint.y),
+                    Math.abs(currentPoint.x - startPoint.x),
+                    Math.abs(currentPoint.y - startPoint.y)
+                );
+                boolean anySelected = false;
+                for (Shape shape : canvas.getShapes()) {
+                    Rectangle bounds = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+                    if (selectionRect.intersects(bounds)) {
+                        shape.select();
+                        if (!canvas.getSelectedShapes().contains(shape)) {
+                            canvas.getSelectedShapes().add(shape);
+                        }
+                        anySelected = true;
+                    }
                 }
-            } else {
-                if (selectedShapes.contains(shape)) {
-                    selectedShapes.remove(shape);
-                    shape.deselect();
+                // StatePanel 갱신
+                if (canvas.getStatePanel() != null) {
+                    if (anySelected) {
+                        canvas.getStatePanel().updateShapeInfo(canvas.getSelectedShapes().get(0));
+                    } else {
+                        canvas.getStatePanel().updateShapeInfo(null);
+                    }
                 }
-            }
+                canvas.repaint();
+                break;
+            default:
+                break;
         }
+        currentMode = Mode.NONE;
+        resizingShape = null;
+        movingShape = null;
+        resizingHandle = null;
+        prevMousePoint = null;
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
         if (!active) return;
-        
-        currentPoint = e.getPoint();
-        
-        // 드래그 중 선택 영역 업데이트
-        Rectangle selectionRect = new Rectangle(
-            Math.min(startPoint.x, currentPoint.x),
-            Math.min(startPoint.y, currentPoint.y),
-            Math.abs(currentPoint.x - startPoint.x),
-            Math.abs(currentPoint.y - startPoint.y)
-        );
-        
-        for (Shape shape : canvas.getShapes()) {
-            if (shape.intersects(selectionRect)) {
-                if (!selectedShapes.contains(shape)) {
-                    selectedShapes.add(shape);
-                    shape.select();
+        Point p = e.getPoint();
+        switch (currentMode) {
+            case RESIZE:
+                if (resizingShape != null && resizingHandle != null && prevMousePoint != null) {
+                    int dx = p.x - prevMousePoint.x;
+                    int dy = p.y - prevMousePoint.y;
+
+                    switch (resizingHandle) {
+                        case BOTTOM_RIGHT:
+                            resizingShape.resize(dx, dy);
+                            break;
+                        case TOP_LEFT:
+                            resizingShape.move(dx, dy);
+                            resizingShape.resize(-dx, -dy);
+                            break;
+                        case TOP_RIGHT:
+                            resizingShape.move(0, dy);
+                            resizingShape.resize(dx, -dy);
+                            break;
+                        case BOTTOM_LEFT:
+                            resizingShape.move(dx, 0);
+                            resizingShape.resize(-dx, dy);
+                            break;
+                    }
+                    prevMousePoint = p;
+                    canvas.repaint();
+                    // StatePanel 정보 갱신 (리사이징 중)
+                    if (canvas.getStatePanel() != null && resizingShape != null) {
+                        canvas.getStatePanel().updateShapeInfo(resizingShape);
+                    }
                 }
-            } else {
-                if (selectedShapes.contains(shape)) {
-                    selectedShapes.remove(shape);
-                    shape.deselect();
+                break;
+            case MOVE:
+                if (prevMousePoint != null) {
+                    int dx = p.x - prevMousePoint.x;
+                    int dy = p.y - prevMousePoint.y;
+                    for (Shape shape : canvas.getShapes()) {
+                        if (shape.isSelected()) {
+                            shape.move(dx, dy);
+                            // StatePanel 정보 갱신 (이동 중)
+                            if (canvas.getStatePanel() != null) {
+                                canvas.getStatePanel().updateShapeInfo(shape);
+                            }
+                        }
+                    }
+                    prevMousePoint = p;
+                    canvas.repaint();
                 }
-            }
+                break;
+            case SELECTION_BOX:
+                currentPoint = p;
+                canvas.repaint();
+                break;
+            default:
+                break;
         }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         if (!active) return;
-        
         Point clickPoint = e.getPoint();
-        
-        // 클릭한 위치의 도형을 선택
-        for (Shape shape : canvas.getShapes()) {
-            if (shape.contains(clickPoint.x, clickPoint.y)) {
-                if (!selectedShapes.contains(shape)) {
-                    selectedShapes.add(shape);
-                    shape.select();
-                }
-            } else {
-                if (selectedShapes.contains(shape)) {
-                    selectedShapes.remove(shape);
-                    shape.deselect();
-                }
+        boolean isShift = e.isShiftDown();
+        Shape clickedShape = null;
+        // 가장 위에 있는 도형 찾기
+        List<Shape> shapes = canvas.getShapes();
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            if (shapes.get(i).contains(clickPoint.x, clickPoint.y)) {
+                clickedShape = shapes.get(i);
+                break;
             }
         }
+        if (clickedShape != null) {
+            if (clickedShape.isSelected() && isShift) {
+                clickedShape.deselect();
+                canvas.getSelectedShapes().remove(clickedShape);
+            } else {
+                if (!isShift) {
+                    canvas.clearAllSelections();
+                    // StatePanel 정보 갱신 (선택 해제)
+                    if (canvas.getStatePanel() != null) {
+                        canvas.getStatePanel().updateShapeInfo(null);
+                    }
+                }
+                clickedShape.select();
+                if (!canvas.getSelectedShapes().contains(clickedShape)) {
+                    canvas.getSelectedShapes().add(clickedShape);
+                }
+            }
+            // StatePanel 정보 갱신
+            if (canvas.getStatePanel() != null) {
+                canvas.getStatePanel().updateShapeInfo(clickedShape);
+            }
+        } else if (!isShift) {
+            canvas.clearAllSelections();
+        }
+        canvas.repaint();
     }
 
     @Override
     public void draw(Graphics g) {
-        if (!active || !isDragging) return;
-        
+        if (!active || currentMode != Mode.SELECTION_BOX || !isDragging || startPoint == null || currentPoint == null) return;
         int x = Math.min(startPoint.x, currentPoint.x);
         int y = Math.min(startPoint.y, currentPoint.y);
         int width = Math.abs(currentPoint.x - startPoint.x);
         int height = Math.abs(currentPoint.y - startPoint.y);
-        
-        // 선택 영역을 점선으로 그리기
-        g.setXORMode(java.awt.Color.WHITE);
-        g.drawRect(x, y, width, height);
-        g.setPaintMode();
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setColor(new Color(0, 120, 215, 64));
+        g2.fillRect(x, y, width, height);
+        g2.setColor(Color.BLUE);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRect(x, y, width, height);
     }
 
     @Override
@@ -152,11 +253,11 @@ public class SelectionTool implements Tool {
     public void deactivate() {
         active = false;
         isDragging = false;
-        // 선택 해제
-        for (Shape shape : selectedShapes) {
-            shape.deselect();
-        }
-        selectedShapes.clear();
+        currentMode = Mode.NONE;
+        resizingShape = null;
+        movingShape = null;
+        resizingHandle = null;
+        prevMousePoint = null;
     }
 
     @Override

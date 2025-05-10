@@ -11,6 +11,8 @@ public class MainFrame extends JFrame {
     private CanvasPanel canvasPanel;
     private ToolPanel toolPanel;
     private CommandManager commandManager;
+    private ColorPanel colorPanel;
+    private StatePanel statePanel;
     
     public MainFrame() {
         setTitle("Vector Graphics Editor");
@@ -22,10 +24,20 @@ public class MainFrame extends JFrame {
         commandManager = new CommandManager();
         canvasPanel = new CanvasPanel(commandManager);
         toolPanel = new ToolPanel(canvasPanel, commandManager);
+        colorPanel = new ColorPanel();
+        statePanel = new StatePanel();
+        
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(toolPanel, BorderLayout.NORTH);
+        leftPanel.add(colorPanel, BorderLayout.SOUTH);
         
         // Add components to frame
-        add(toolPanel, BorderLayout.WEST);
+        add(leftPanel, BorderLayout.WEST);
         add(canvasPanel, BorderLayout.CENTER);
+        add(statePanel, BorderLayout.SOUTH);
+        
+        // Set up state panel updates
+        canvasPanel.setStatePanel(statePanel);
         
         setVisible(true);
     }

@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Color;
 import com.vector.editor.shapes.EllipseShape;
 import com.vector.editor.CanvasPanel;
+import com.vector.editor.core.ColorManager;
 
 public class EllipseTool implements Tool {
     private boolean active = false;
@@ -28,8 +29,9 @@ public class EllipseTool implements Tool {
         isDragging = true;
         
         // 새로운 타원 도형 생성
+        Color color = ColorManager.getInstance().getCurrentColor();
         currentShape = new EllipseShape(startPoint.x, startPoint.y, 0, 0, 
-            Color.WHITE, Color.BLACK, 1);
+            null, color, 1);
     }
 
     @Override
