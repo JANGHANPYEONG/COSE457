@@ -18,7 +18,7 @@ public class ToolPanel extends JPanel {
     private CommandManager commandManager;
 
     private static final int BUTTON_SIZE = 50;
-    private static final int PANEL_WIDTH = 100;
+    private static final int PANEL_WIDTH = 80;
 
     private Color strokeColor = Color.BLACK;
     private int strokeWidth = 1;
@@ -30,7 +30,8 @@ public class ToolPanel extends JPanel {
         setPreferredSize(new Dimension(PANEL_WIDTH, 600));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
+        setBackground(Color.BLACK);
+
         // Add tool buttons
         addToolButton("Selection", "S", "selection");
         addToolButton("Rectangle", "R", "rectangle");
@@ -50,12 +51,14 @@ public class ToolPanel extends JPanel {
         button.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
         button.setMaximumSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
         button.setToolTipText(shortcut);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         button.addActionListener(e -> {
             canvasPanel.setCurrentTool(toolId);
         });
         
         add(button);
+        add(Box.createVerticalStrut(5));
     }
 
     private void addImageButton() {
@@ -117,7 +120,6 @@ public class ToolPanel extends JPanel {
         add(undoButton);
         add(Box.createVerticalStrut(5));
         add(redoButton);
-        add(Box.createVerticalStrut(5));
 
         // 키보드 단축키 추가 (Ctrl+Z, Ctrl+Y)
         setupKeyboardShortcuts(undoButton, redoButton);

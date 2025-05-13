@@ -19,26 +19,33 @@ public class ColorPanel extends JPanel implements ColorManager.ColorChangeListen
     public ColorPanel() {
         this.colorManager = ColorManager.getInstance();
         this.colorManager.addColorChangeListener(this);
-        
-        setLayout(new BorderLayout());
+
+        setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         setPreferredSize(new Dimension(200, 100));
-        
+        setBackground(Color.BLACK);
+
+        JPanel previewWrapper = new JPanel();
+        previewWrapper.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
         // Color preview panel
         colorPreview = new JPanel();
-        colorPreview.setPreferredSize(new Dimension(200, 30));
+        colorPreview.setPreferredSize(new Dimension(65, 65));
         colorPreview.setBackground(colorManager.getCurrentColor());
-        add(colorPreview, BorderLayout.NORTH);
+        colorPreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+
+        previewWrapper.add(colorPreview);
+        add(previewWrapper, BorderLayout.WEST);
         
         // Color palette panel
         JPanel palettePanel = new JPanel(new GridLayout(2, 5, 5, 5));
-        palettePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        palettePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 10));
         
         for (Color color : DEFAULT_COLORS) {
             JButton colorButton = createColorButton(color);
             palettePanel.add(colorButton);
         }
-        
-        add(palettePanel, BorderLayout.CENTER);
+
+        add(palettePanel, BorderLayout.WEST);
     }
 
     private JButton createColorButton(Color color) {

@@ -19,9 +19,10 @@ public class StatePanel extends JPanel implements ShapeObserver {
     private CanvasPanel canvasPanel;
     
     public StatePanel() {
-        setLayout(new FlowLayout(FlowLayout.LEFT));
-        setPreferredSize(new Dimension(800, 30));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setPreferredSize(new Dimension(200, 30));
         setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        setBackground(Color.BLACK);
         
         mousePositionLabel = new JLabel("Mouse: (0, 0)");
         toolStateLabel = new JLabel("Tool: None");
@@ -31,15 +32,15 @@ public class StatePanel extends JPanel implements ShapeObserver {
         shapeColorLabel = new JLabel("Color: None");
         
         add(mousePositionLabel);
-        add(Box.createHorizontalStrut(20));
+        add(Box.createVerticalStrut(20));
         add(toolStateLabel);
-        add(Box.createHorizontalStrut(20));
+        add(Box.createVerticalStrut(20));
         add(shapeTypeLabel);
-        add(Box.createHorizontalStrut(20));
+        add(Box.createVerticalStrut(20));
         add(shapePositionLabel);
-        add(Box.createHorizontalStrut(20));
+        add(Box.createVerticalStrut(20));
         add(shapeSizeLabel);
-        add(Box.createHorizontalStrut(20));
+        add(Box.createVerticalStrut(20));
         add(shapeColorLabel);
 
         shapePositionLabel.addMouseListener(new MouseAdapter() {

@@ -27,14 +27,11 @@ public class MainFrame extends JFrame {
         colorPanel = new ColorPanel();
         statePanel = new StatePanel();
         
-        JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.add(toolPanel, BorderLayout.NORTH);
-        leftPanel.add(colorPanel, BorderLayout.SOUTH);
-        
         // Add components to frame
-        add(leftPanel, BorderLayout.WEST);
+        add(toolPanel, BorderLayout.WEST);
         add(canvasPanel, BorderLayout.CENTER);
-        add(statePanel, BorderLayout.SOUTH);
+        add(statePanel, BorderLayout.EAST);
+        add(colorPanel, BorderLayout.SOUTH);
         
         // Set up state panel updates
         canvasPanel.setStatePanel(statePanel);
