@@ -1,9 +1,15 @@
 package com.vector.editor.tools;
 
+import com.vector.editor.command.Command;
+import com.vector.editor.command.CommandManager;
+import com.vector.editor.command.MoveCommand;
+import com.vector.editor.command.ResizeCommand;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import com.vector.editor.core.Shape;
@@ -20,6 +26,10 @@ public class SelectionTool implements Tool {
     private Point currentPoint;
     private boolean isDragging = false;
     private CanvasPanel canvas;
+    private CommandManager commandManager;
+    private final Map<Shape, Rectangle> beforeResizeBounds = new HashMap<>();
+    private final Map<Shape, Rectangle> afterResizeBounds = new HashMap<>();
+    private final Map<Shape, Point> beforeMoveStates = new HashMap<>();
 
     // 추가: 리사이즈/이동 상태 관리
     private Mode currentMode = Mode.NONE;
@@ -28,8 +38,9 @@ public class SelectionTool implements Tool {
     private Shape.HandlePosition resizingHandle = null;
     private Point prevMousePoint = null;
 
-    public SelectionTool(CanvasPanel canvas) {
+    public SelectionTool(CanvasPanel canvas, CommandManager commandManager) {
         this.canvas = canvas;
+        this.commandManager = commandManager;
     }
 
     @Override
@@ -63,6 +74,13 @@ public class SelectionTool implements Tool {
                 currentMode = Mode.MOVE;
                 movingShape = shape;
                 prevMousePoint = p;
+
+                for (Shape s : canvas.getShapes()) {
+                    if (s.isSelected()) {
+                        beforeResizeBounds.put(s, new Rectangle(s.getX(), s.getY(), s.getWidth(), s.getHeight()));
+                        beforeMoveStates.put(s, new Point(s.getX(), s.getY()));
+                    }
+                }
                 return;
             }
         }
@@ -83,8 +101,54 @@ public class SelectionTool implements Tool {
         Point p = e.getPoint();
         switch (currentMode) {
             case RESIZE:
+                afterResizeBounds.clear();
+
+                for (Shape shape : canvas.getSelectedShapes()) {
+                    Rectangle current = new Rectangle(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+                    afterResizeBounds.put(shape, current);
+                }
+
+                if (!beforeResizeBounds.isEmpty()) {
+                    Command resizeCmd = new ResizeCommand(
+                        new ArrayList<>(beforeResizeBounds.keySet()),
+                        beforeResizeBounds,
+                        afterResizeBounds
+                    );
+                    commandManager.executeCommand(resizeCmd);
+                }
+
+                resizingShape = null;
+                resizingHandle = null;
+                prevMousePoint = null;
+                beforeResizeBounds.clear();
+                afterResizeBounds.clear();
+                break;
             case MOVE:
-                // 리사이즈나 이동이 완료되면 상태 초기화
+                if (!canvas.getSelectedShapes().isEmpty()) {
+                    Map<Shape, Point> afterMoveStates = new HashMap<>();
+
+                    for (Shape shape : canvas.getSelectedShapes()) {
+                        afterMoveStates.put(shape, new Point(shape.getX(), shape.getY()));
+                    }
+
+                    boolean moved = canvas.getSelectedShapes().stream().anyMatch(shape -> {
+                        Point before = beforeMoveStates.get(shape);
+                        Point after = afterMoveStates.get(shape);
+                        return before != null && (before.x != after.x || before.y != after.y);
+                    });
+
+                    if (moved) {
+                        Command moveCmd = new MoveCommand(
+                            new ArrayList<>(canvas.getSelectedShapes()),
+                            new HashMap<>(beforeMoveStates),
+                            afterMoveStates
+                        );
+                        commandManager.executeCommand(moveCmd);
+                    }
+                }
+
+                prevMousePoint = null;
+                beforeMoveStates.clear();
                 break;
             case SELECTION_BOX:
                 currentPoint = p;
