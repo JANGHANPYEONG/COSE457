@@ -275,6 +275,13 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
         repaint();
     }
 
+    public void clearAllShapes() {
+        shapes.clear();
+        selectedShape = null;
+        selectedShapes.clear();
+        removeInlineTextEditor();
+    }
+
     public StatePanel getStatePanel() {
         return statePanel;
     }

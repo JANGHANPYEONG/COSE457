@@ -71,8 +71,15 @@ public class MainFrame extends JFrame {
         loadItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
         loadItem.addActionListener(e -> handleLoad());
 
+        JMenuItem newItem = new JMenuItem("New");
+        newItem.setBackground(Color.BLACK);
+        newItem.setForeground(Color.LIGHT_GRAY);
+        newItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        newItem.addActionListener(e -> handleNew());
+
         fileMenu.add(saveItem);
         fileMenu.add(loadItem);
+        fileMenu.add(newItem);
 
         menuBar.add(fileMenu);
 
@@ -108,6 +115,20 @@ public class MainFrame extends JFrame {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Failed to load.", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    private void handleNew() {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Current work will be lost. Continue?",
+            "New File",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            canvasPanel.clearAllShapes();
+            canvasPanel.repaint();
         }
     }
 
