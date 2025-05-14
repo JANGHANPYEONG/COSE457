@@ -8,7 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 
 public class ImageShape extends Shape {
-    private Image image;
+    private transient Image image;
     private boolean maintainAspectRatio;
 
     public ImageShape(int x, int y, int width, int height,

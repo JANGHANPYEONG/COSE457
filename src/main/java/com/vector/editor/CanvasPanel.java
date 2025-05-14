@@ -262,6 +262,19 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
         }
     }
 
+    public void setShapes(List<Shape> shapes) {
+        this.shapes = shapes;
+        selectedShapes.clear();
+        selectedShape = null;
+
+        // 옵저버 다시 등록
+        for (Shape shape : shapes) {
+            shape.addObserver(this);
+        }
+
+        repaint();
+    }
+
     public StatePanel getStatePanel() {
         return statePanel;
     }
