@@ -62,6 +62,12 @@ public class SelectionTool implements Tool {
                     resizingShape = shape;
                     resizingHandle = entry.getKey();
                     prevMousePoint = p;
+
+                    for (Shape s : canvas.getShapes()) {
+                        if (s.isSelected()) {
+                            beforeResizeBounds.put(s, new Rectangle(s.getX(), s.getY(), s.getWidth(), s.getHeight()));
+                        }
+                    }
                     return;
                 }
             }
@@ -77,7 +83,6 @@ public class SelectionTool implements Tool {
 
                 for (Shape s : canvas.getShapes()) {
                     if (s.isSelected()) {
-                        beforeResizeBounds.put(s, new Rectangle(s.getX(), s.getY(), s.getWidth(), s.getHeight()));
                         beforeMoveStates.put(s, new Point(s.getX(), s.getY()));
                     }
                 }
@@ -108,10 +113,16 @@ public class SelectionTool implements Tool {
                     afterResizeBounds.put(shape, current);
                 }
 
-                if (!beforeResizeBounds.isEmpty()) {
+                boolean resized = canvas.getSelectedShapes().stream().anyMatch(shape -> {
+                    Rectangle before = beforeResizeBounds.get(shape);
+                    Rectangle after = afterResizeBounds.get(shape);
+                    return before != null && (before.x != after.x || before.y != after.y) && (before.width != after.width || before.height != after.height);
+                });
+
+                if (resized) {
                     Command resizeCmd = new ResizeCommand(
-                        new ArrayList<>(beforeResizeBounds.keySet()),
-                        beforeResizeBounds,
+                        new ArrayList<>(canvas.getSelectedShapes()),
+                        new HashMap<>(beforeResizeBounds),
                         afterResizeBounds
                     );
                     commandManager.executeCommand(resizeCmd);
@@ -121,7 +132,6 @@ public class SelectionTool implements Tool {
                 resizingHandle = null;
                 prevMousePoint = null;
                 beforeResizeBounds.clear();
-                afterResizeBounds.clear();
                 break;
             case MOVE:
                 if (!canvas.getSelectedShapes().isEmpty()) {
