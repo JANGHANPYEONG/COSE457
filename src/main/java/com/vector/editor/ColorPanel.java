@@ -23,6 +23,7 @@ public class ColorPanel extends JPanel implements ColorManager.ColorChangeListen
         setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         setPreferredSize(new Dimension(200, 100));
         setBackground(Color.BLACK);
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
 
         JPanel previewWrapper = new JPanel();
         previewWrapper.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));

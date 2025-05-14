@@ -15,6 +15,7 @@ public class StatePanel extends JPanel implements ShapeObserver {
     private JLabel shapePositionLabel;
     private JLabel shapeSizeLabel;
     private JLabel shapeColorLabel;
+    private JPanel colorPreview;
     private Shape currentShape = null;
     private CanvasPanel canvasPanel;
     
@@ -23,25 +24,27 @@ public class StatePanel extends JPanel implements ShapeObserver {
         setPreferredSize(new Dimension(200, 30));
         setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         setBackground(Color.BLACK);
-        
-        mousePositionLabel = new JLabel("Mouse: (0, 0)");
-        toolStateLabel = new JLabel("Tool: None");
-        shapeTypeLabel = new JLabel("Shape: None");
-        shapePositionLabel = new JLabel("Position: None");
-        shapeSizeLabel = new JLabel("Size: None");
-        shapeColorLabel = new JLabel("Color: None");
-        
-        add(mousePositionLabel);
+
+        mousePositionLabel = new JLabel("(0, 0)");
+        toolStateLabel = new JLabel("None");
+        shapeTypeLabel = new JLabel("None");
+        shapePositionLabel = new JLabel("None");
+        shapeSizeLabel = new JLabel("None");
+        shapeColorLabel = new JLabel("None");
+        colorPreview = new JPanel();
+        colorPreview.setBackground(Color.LIGHT_GRAY);
+
+        add(createLabeledBox("Mouse", mousePositionLabel, null));
         add(Box.createVerticalStrut(20));
-        add(toolStateLabel);
+        add(createLabeledBox("Tool", toolStateLabel, null));
         add(Box.createVerticalStrut(20));
-        add(shapeTypeLabel);
+        add(createLabeledBox("Shape", shapeTypeLabel, null));
         add(Box.createVerticalStrut(20));
-        add(shapePositionLabel);
+        add(createLabeledBox("Position", shapePositionLabel, null));
         add(Box.createVerticalStrut(20));
-        add(shapeSizeLabel);
+        add(createLabeledBox("Size", shapeSizeLabel, null));
         add(Box.createVerticalStrut(20));
-        add(shapeColorLabel);
+        add(createLabeledBox("Color", shapeColorLabel, colorPreview));
 
         shapePositionLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -80,11 +83,11 @@ public class StatePanel extends JPanel implements ShapeObserver {
     }
     
     public void updateMousePosition(int x, int y) {
-        mousePositionLabel.setText(String.format("Mouse: (%d, %d)", x, y));
+        mousePositionLabel.setText(String.format("(%d, %d)", x, y));
     }
     
     public void updateToolState(String toolName) {
-        toolStateLabel.setText("Tool: " + toolName);
+        toolStateLabel.setText(toolName);
     }
     
     public void updateShapeInfo(Shape shape) {
@@ -96,21 +99,56 @@ public class StatePanel extends JPanel implements ShapeObserver {
             shape.addObserver(this);
         }
         if (shape == null) {
-            shapeTypeLabel.setText("Shape: None");
-            shapePositionLabel.setText("Position: None");
-            shapeSizeLabel.setText("Size: None");
-            shapeColorLabel.setText("Color: None");
+            shapeTypeLabel.setText("None");
+            shapePositionLabel.setText("None");
+            shapeSizeLabel.setText("None");
+            shapeColorLabel.setText("None");
+            colorPreview.setBackground(Color.LIGHT_GRAY);
             return;
         }
-        shapeTypeLabel.setText(String.format("Shape: %s", shape.getClass().getSimpleName()));
-        shapePositionLabel.setText(String.format("Position: (%d, %d)", shape.getX(), shape.getY()));
-        shapeSizeLabel.setText(String.format("Size: %dx%d", shape.getWidth(), shape.getHeight()));
-        shapeColorLabel.setText("Color: " + (shape.getStrokeColor() != null ?
+        shapeTypeLabel.setText(shape.getClass().getSimpleName());
+        shapePositionLabel.setText(String.format("(%d, %d)", shape.getX(), shape.getY()));
+        shapeSizeLabel.setText(String.format("%dx%d", shape.getWidth(), shape.getHeight()));
+        shapeColorLabel.setText((shape.getStrokeColor() != null ?
             String.format("#%02x%02x%02x",
                 shape.getStrokeColor().getRed(),
                 shape.getStrokeColor().getGreen(),
                 shape.getStrokeColor().getBlue()) : "None"));
+
+        if (shape.getStrokeColor() != null) {
+            colorPreview.setBackground(shape.getStrokeColor());
+        }
     }
+
+    private JPanel createLabeledBox(String labelText, JLabel valueLabel, JComponent optionalPreview) {
+        JLabel label = new JLabel(labelText);
+        label.setForeground(Color.LIGHT_GRAY);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        valueLabel.setForeground(new Color(50, 100, 255));
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+
+        JPanel box = new JPanel();
+        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        box.setBackground(Color.DARK_GRAY);
+        box.setMaximumSize(new Dimension(180, 60));
+        box.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        box.add(label);
+        box.add(valueLabel);
+
+        if (labelText.equals("Color")) {
+            optionalPreview.setPreferredSize(new Dimension(170, 50));
+            optionalPreview.setAlignmentX(Component.LEFT_ALIGNMENT);
+            box.setMaximumSize(new Dimension(180, 100));
+            box.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            box.add(Box.createVerticalStrut(5));
+            box.add(optionalPreview);
+        }
+
+        return box;
+    }
+
 
     @Override
     public void onShapeChanged(Shape shape) {
