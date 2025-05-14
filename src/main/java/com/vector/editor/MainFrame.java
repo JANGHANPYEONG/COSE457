@@ -23,6 +23,7 @@ public class MainFrame extends JFrame {
     private StatePanel statePanel;
     
     public MainFrame() {
+        JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         setTitle("Vector Graphics Editor");
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,27 +53,31 @@ public class MainFrame extends JFrame {
     private JMenuBar createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(Color.BLACK);
-        menuBar.setBorder(BorderFactory.createEmptyBorder());
+        menuBar.setBorder(BorderFactory.createEmptyBorder(0, 80, 0, 0));
 
         JMenu fileMenu = new JMenu("File");
+        fileMenu.setFont(new Font("SansSerif", Font.BOLD, 14));
         fileMenu.setForeground(Color.LIGHT_GRAY);
-        fileMenu.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        fileMenu.setBorder(BorderFactory.createEmptyBorder(2, 10, 2, 10));
         fileMenu.getPopupMenu().setBorder(BorderFactory.createEmptyBorder());
 
         JMenuItem saveItem = new JMenuItem("Save");
-        saveItem.setBackground(Color.BLACK);
+        saveItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        saveItem.setBackground(new Color(50, 50, 50));
         saveItem.setForeground(Color.LIGHT_GRAY);
         saveItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
         saveItem.addActionListener(e -> handleSave());
 
         JMenuItem loadItem = new JMenuItem("Load");
-        loadItem.setBackground(Color.BLACK);
+        loadItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        loadItem.setBackground(new Color(50, 50, 50));
         loadItem.setForeground(Color.LIGHT_GRAY);
         loadItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
         loadItem.addActionListener(e -> handleLoad());
 
         JMenuItem newItem = new JMenuItem("New");
-        newItem.setBackground(Color.BLACK);
+        newItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        newItem.setBackground(new Color(50, 50, 50));
         newItem.setForeground(Color.LIGHT_GRAY);
         newItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
         newItem.addActionListener(e -> handleNew());
