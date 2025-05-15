@@ -53,7 +53,7 @@ public class MainFrame extends JFrame {
     private JMenuBar createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(Color.BLACK);
-        menuBar.setBorder(BorderFactory.createEmptyBorder(0, 80, 0, 0));
+        menuBar.setBorder(BorderFactory.createEmptyBorder(0, 65, 0, 0));
 
         JMenu fileMenu = new JMenu("File");
         fileMenu.setFont(new Font("SansSerif", Font.BOLD, 14));
