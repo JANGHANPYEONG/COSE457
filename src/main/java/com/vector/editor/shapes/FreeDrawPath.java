@@ -45,10 +45,9 @@ public class FreeDrawPath extends Shape {
     public boolean contains(int px, int py) {
         final int tolerance = 4;
 
-        for (int i = 0; i < points.size(); i++) {
+        for (int i = 0; i < points.size() - 1; i++) {
             Point p1 = points.get(i);
             Point p2 = points.get(i + 1);
-
             double dist = pointToLineDistance(px, py, p1.x, p1.y, p2.x, p2.y);
             if (dist <= tolerance) return true;
         }

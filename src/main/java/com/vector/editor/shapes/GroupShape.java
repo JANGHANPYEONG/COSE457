@@ -122,4 +122,40 @@ public class GroupShape extends Shape {
         return new ArrayList<>(shapes);
     }
 
+    @Override
+    public void setPosition(int x, int y) {
+        int dx = x - this.x;
+        int dy = y - this.y;
+        super.setPosition(x, y);
+        for (Shape shape : shapes) {
+            shape.move(dx, dy);
+        }
+    }
+
+    @Override
+    public void setSize(int width, int height) {
+        int oldX = this.x;
+        int oldY = this.y;
+        int oldWidth = this.width;
+        int oldHeight = this.height;
+
+        super.setSize(width, height);
+
+        double scaleX = oldWidth != 0 ? (double) width / oldWidth : 1.0;
+        double scaleY = oldHeight != 0 ? (double) height / oldHeight : 1.0;
+
+        for (Shape shape : shapes) {
+            int relX = shape.getX() - oldX;
+            int relY = shape.getY() - oldY;
+
+            int newX = x + (int)(relX * scaleX);
+            int newY = y + (int)(relY * scaleY);
+
+            int newW = (int)(shape.getWidth() * scaleX);
+            int newH = (int)(shape.getHeight() * scaleY);
+
+            shape.setPosition(newX, newY);
+            shape.setSize(newW, newH);
+        }
+    }
 } 

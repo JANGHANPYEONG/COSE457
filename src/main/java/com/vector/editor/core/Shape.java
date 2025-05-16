@@ -5,12 +5,15 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Shape {
+public abstract class Shape implements Serializable {
     protected int x, y;
     protected int width, height;
     protected Color fillColor;
@@ -18,7 +21,7 @@ public abstract class Shape {
     protected int strokeWidth;
     protected boolean selected;
     protected int zOrder;
-    protected List<ShapeObserver> observers;
+    protected transient List<ShapeObserver> observers;
     protected int originalZOrder;
 
     protected static int maxZOrder = 0;
@@ -90,8 +93,16 @@ public abstract class Shape {
         observers.remove(observer);
     }
 
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.observers = new ArrayList<>();
+    }
+
+
     protected void notifyObservers() {
-        for (ShapeObserver observer : observers) {
+        // Create a copy of the observers list to avoid ConcurrentModificationException
+        List<ShapeObserver> observersCopy = new ArrayList<>(observers);
+        for (ShapeObserver observer : observersCopy) {
             observer.onShapeChanged(this);
         }
     }

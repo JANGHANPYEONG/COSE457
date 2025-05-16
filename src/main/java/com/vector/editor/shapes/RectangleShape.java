@@ -16,8 +16,10 @@ public class RectangleShape extends Shape {
     public void draw(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
 
-        g2.setColor(fillColor);
-        g2.fillRect(x, y, width, height);
+        if (fillColor != null) {
+            g2.setColor(fillColor);
+            g2.fillRect(x, y, width, height);
+        }
 
         g2.setColor(strokeColor);
         g2.setStroke(new BasicStroke(strokeWidth));
