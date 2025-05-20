@@ -66,6 +66,7 @@ public class ToolPanel extends JPanel {
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         button.addActionListener(e -> {
+            canvasPanel.clearAllSelections();
             canvasPanel.setCurrentTool(toolId);
             updateToolIcons(toolId);
         });
@@ -94,13 +95,14 @@ public class ToolPanel extends JPanel {
         imageButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         imageButton.addActionListener(e -> {
-            canvasPanel.setCurrentTool(null); // 도형 도구 선택 해제
-            updateToolIcons(null); // 모든 도구 버튼을 회색으로
+            canvasPanel.clearAllSelections();
+            canvasPanel.setCurrentTool(null);
+            updateToolIcons(null);
 
             imageButton.setIcon(recolorIcon(scaledIcon, new Color(50, 100, 255)));
 
             // 다시 회색으로 되돌리기 (200ms 후)
-            Timer timer = new Timer(200, _ -> imageButton.setIcon(grayIcon));
+            Timer timer = new Timer(200, event -> imageButton.setIcon(grayIcon));
             timer.setRepeats(false);
             timer.start();
 
@@ -140,6 +142,7 @@ public class ToolPanel extends JPanel {
         undoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         undoButton.addActionListener(e -> {
+            canvasPanel.clearAllSelections();
             canvasPanel.setCurrentTool(null);
             updateToolIcons(null);
 
@@ -150,7 +153,7 @@ public class ToolPanel extends JPanel {
                 canvasPanel.repaint();
             }
 
-            Timer timer = new Timer(200, _ -> undoButton.setIcon(undoGrayIcon));
+            Timer timer = new Timer(200, event -> undoButton.setIcon(undoGrayIcon));
             timer.setRepeats(false);
             timer.start();
         });
@@ -174,6 +177,7 @@ public class ToolPanel extends JPanel {
         redoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         redoButton.addActionListener(e -> {
+            canvasPanel.clearAllSelections();
             canvasPanel.setCurrentTool(null);
             updateToolIcons(null);
 
@@ -184,7 +188,7 @@ public class ToolPanel extends JPanel {
                 canvasPanel.repaint();
             }
 
-            Timer timer = new Timer(200, _ -> redoButton.setIcon(redoGrayIcon));
+            Timer timer = new Timer(200, event -> redoButton.setIcon(redoGrayIcon));
             timer.setRepeats(false);
             timer.start();
         });

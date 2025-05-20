@@ -2,6 +2,7 @@ package com.vector.editor.tools;
 
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
 
 public interface Tool {
     void mousePressed(MouseEvent e);
@@ -14,4 +15,5 @@ public interface Tool {
     void activate();
     void deactivate();
     boolean isActive();
+    void keyPressed(KeyEvent e);
 } 

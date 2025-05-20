@@ -18,6 +18,7 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.BasicStroke;
 import java.util.Map;
+import java.awt.event.KeyEvent;
 
 public class SelectionTool implements Tool {
     private enum Mode { NONE, RESIZE, MOVE, SELECTION_BOX }
@@ -337,5 +338,19 @@ public class SelectionTool implements Tool {
     @Override
     public boolean isActive() {
         return active;
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (!active) return;
+        
+        if (e.getKeyCode() == KeyEvent.VK_DELETE && !canvas.getSelectedShapes().isEmpty()) {
+            // 선택된 도형들을 삭제
+            for (Shape shape : new ArrayList<>(canvas.getSelectedShapes())) {
+                canvas.getShapes().remove(shape);
+                shape.removeObserver(canvas);
+            }
+            canvas.clearAllSelections();
+        }
     }
 } 

@@ -5,6 +5,7 @@ import com.vector.editor.core.Shape;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 public abstract class AbstractShapeTool implements Tool {
@@ -83,5 +84,10 @@ public abstract class AbstractShapeTool implements Tool {
 
     @Override
     public boolean isActive() { return active; }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        // 기본 구현은 아무것도 하지 않음
+    }
 }
 

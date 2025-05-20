@@ -7,83 +7,30 @@ import java.awt.Color;
 import com.vector.editor.shapes.LineShape;
 import com.vector.editor.CanvasPanel;
 import com.vector.editor.core.ColorManager;
+import com.vector.editor.core.Shape;
 
-public class LineTool implements Tool {
-    private boolean active = false;
-    private Point startPoint;
-    private Point currentPoint;
-    private boolean isDragging = false;
-    private LineShape currentShape;
-    private CanvasPanel canvas;
-
+public class LineTool extends AbstractShapeTool {
     public LineTool(CanvasPanel canvas) {
-        this.canvas = canvas;
+        super(canvas);
     }
 
     @Override
-    public void mousePressed(MouseEvent e) {
-        if (!active) return;
-        
-        startPoint = e.getPoint();
-        currentPoint = startPoint;
-        isDragging = true;
-        
-        // 새로운 선 도형 생성
+    protected Shape createShape(int x, int y, int width, int height) {
         Color color = ColorManager.getInstance().getCurrentColor();
-        currentShape = new LineShape(startPoint.x, startPoint.y, currentPoint.x, currentPoint.y, 
-            color, 1);
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        if (!active) return;
-        
-        currentPoint = e.getPoint();
-        isDragging = false;
-        
-        if (currentShape != null) {
-            canvas.addShape(currentShape);
-            currentShape = null;
-        }
+        return new LineShape(x, y, x + width, y + height, color, 1);
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        if (!active) return;
-        
+        if (!active || currentShape == null) return;
+
         currentPoint = e.getPoint();
         
-        if (currentShape != null) {
-            currentShape.setEndPoint(currentPoint.x, currentPoint.y);
+        // 선의 경우 width와 height를 사용하지 않고 직접 끝점을 설정
+        if (currentShape instanceof LineShape) {
+            ((LineShape) currentShape).setEndPoint(currentPoint.x, currentPoint.y);
         }
-    }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        // 선은 드래그로만 그릴 수 있음
-    }
-
-    @Override
-    public void draw(Graphics g) {
-        if (!active || !isDragging || currentShape == null) return;
-        
-        currentShape.draw(g);
-    }
-
-    @Override
-    public void activate() {
-        active = true;
-    }
-
-    @Override
-    public void deactivate() {
-        active = false;
-        isDragging = false;
-        currentShape = null;
-    }
-
-    @Override
-    public boolean isActive() {
-        return active;
+        canvas.repaint();
     }
 } 

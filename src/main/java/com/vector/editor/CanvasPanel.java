@@ -24,6 +24,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class CanvasPanel extends JPanel implements ShapeObserver {
     private final CommandManager commandManager;
@@ -55,14 +57,17 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
     public CanvasPanel(CommandManager commandManager) {
         this.commandManager = commandManager;
         this.toolManager = new ToolManager(this, commandManager);
-
+        this.shapes = new ArrayList<>();
+        this.selectedShapes = new ArrayList<>();
+        
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(800, 600));
-
-        // Add mouse listeners for drawing
+        
+        // 마우스 이벤트 리스너 추가
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                requestFocusInWindow(); // 포커스를 받아 키보드 이벤트를 처리할 수 있도록 함
                 if (statePanel != null) {
                     statePanel.updateMousePosition(e.getX(), e.getY());
                 }
@@ -75,7 +80,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
                     return;
                 }
             }
-
+            
             @Override
             public void mouseReleased(MouseEvent e) {
                 Tool tool = toolManager.getCurrentTool();
@@ -84,7 +89,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
                     return;
                 }
             }
-
+            
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (statePanel != null) {
@@ -105,7 +110,7 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
                 }
             }
         });
-
+        
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -126,6 +131,17 @@ public class CanvasPanel extends JPanel implements ShapeObserver {
                 }
 
                 Point curr = e.getPoint();
+            }
+        });
+
+        // 키보드 이벤트 리스너 추가
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                Tool tool = toolManager.getCurrentTool();
+                if (tool != null && tool.isActive()) {
+                    tool.keyPressed(e);
+                }
             }
         });
     }

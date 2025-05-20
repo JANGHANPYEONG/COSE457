@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import com.vector.editor.core.ColorManager;
+import java.awt.event.KeyEvent;
 
 public class FreeDrawTool implements Tool {
     private Color strokeColor;
@@ -71,5 +72,10 @@ public class FreeDrawTool implements Tool {
     @Override
     public boolean isActive() {
         return active;
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
     }
 }

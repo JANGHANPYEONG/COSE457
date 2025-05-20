@@ -9,6 +9,7 @@ import com.vector.editor.shapes.TextShape;
 import com.vector.editor.CanvasPanel;
 import com.vector.editor.core.ColorManager;
 import com.vector.editor.core.Shape;
+import java.awt.event.KeyEvent;
 
 public class TextTool implements Tool {
     private boolean active = false;
@@ -87,5 +88,10 @@ public class TextTool implements Tool {
     @Override
     public boolean isActive() {
         return active;
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
     }
 } 
