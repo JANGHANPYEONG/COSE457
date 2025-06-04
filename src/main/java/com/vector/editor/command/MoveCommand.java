@@ -1,32 +1,35 @@
 package com.vector.editor.command;
 
-import com.vector.editor.core.Shape;
+import com.vector.editor.model.Document;
+import com.vector.editor.model.shape.Shape;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MoveCommand implements Command {
+    private Document document;
     private final List<Shape> shapes;
     private final Map<Shape, Point> beforeStates;
     private final Map<Shape, Point> afterStates;
 
-    public MoveCommand(Shape shape,
+    public MoveCommand(Document document, Shape shape,
         Map<Shape, Point> beforeStates,
         Map<Shape, Point> afterStates) {
+        this.document = document;
         this.shapes = List.of(shape);
-        this.beforeStates = beforeStates;
-        this.afterStates = afterStates;
+        this.beforeStates = new HashMap<>(beforeStates);
+        this.afterStates = new HashMap<>(afterStates);
     }
 
-    public MoveCommand(List<Shape> shapes,
+    public MoveCommand(Document document, List<Shape> shapes,
         Map<Shape, Point> beforeStates,
         Map<Shape, Point> afterStates) {
+        this.document = document;
         this.shapes = new ArrayList<>(shapes);
-        this.beforeStates = beforeStates;
-        this.afterStates = afterStates;
+        this.beforeStates = new HashMap<>(beforeStates);
+        this.afterStates = new HashMap<>(afterStates);
     }
 
     @Override

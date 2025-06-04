@@ -1,25 +1,24 @@
 package com.vector.editor.command;
 
-import com.vector.editor.core.Shape;
-import java.util.List;
+import com.vector.editor.model.Document;
+import com.vector.editor.model.shape.Shape;
 
 public class RemoveShapeCommand implements Command {
-    private final List<Shape> shapeList;
-    private final Shape shape;
+    private Document document;
+    private Shape shape;
 
-    public RemoveShapeCommand(List<Shape> shapeList, Shape shape) {
-        this.shapeList = shapeList;
+    public RemoveShapeCommand(Document document, Shape shape) {
+        this.document = document;
         this.shape = shape;
     }
 
     @Override
     public void execute() {
-        shapeList.remove(shape);
+        document.removeShape(shape);
     }
 
     @Override
     public void undo() {
-        shapeList.add(shape);
+        document.addShape(shape);
     }
-
 }

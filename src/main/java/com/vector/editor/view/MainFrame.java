@@ -1,0 +1,234 @@
+package com.vector.editor.view;
+
+import com.vector.editor.controller.ToolManager;
+import com.vector.editor.model.Document;
+import com.vector.editor.service.FileService;
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import com.vector.editor.command.CommandManager;
+
+public class MainFrame extends JFrame {
+    private Document document;
+    private ToolManager toolManager;
+    private CanvasView canvasView;
+    private ToolPanel toolPanel;
+    private ColorPanel colorPanel;
+    private File currentFile;
+    private FileService fileService;
+    private CommandManager commandManager;
+
+    public MainFrame() {
+        document = new Document();
+        commandManager = new CommandManager();
+        toolManager = new ToolManager(document, commandManager);
+        fileService = new FileService();
+        
+        // ToolManager의 currentTool 변경 시 CanvasView에 반영
+        toolManager.addPropertyChangeListener(evt -> {
+            if ("currentTool".equals(evt.getPropertyName())) {
+                if (canvasView != null) {
+                    canvasView.setTool((com.vector.editor.controller.tool.Tool) evt.getNewValue());
+                }
+                // SelectTool에서 다른 Tool로 바뀔 때 선택 해제
+                Object oldTool = evt.getOldValue();
+                Object newTool = evt.getNewValue();
+                if (oldTool != null && oldTool instanceof com.vector.editor.controller.tool.SelectTool
+                    && !(newTool instanceof com.vector.editor.controller.tool.SelectTool)) {
+                    document.clearSelection();
+                }
+            }
+        });
+        
+        setTitle("Vector Editor");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1200, 800);
+        setLocationRelativeTo(null);
+        
+        setupUI();
+        // KeyInputManager 등록
+        KeyInputManager keyInputManager = new KeyInputManager(toolManager, commandManager, document, canvasView);
+        this.addKeyListener(keyInputManager);
+        this.setFocusable(true);
+        this.requestFocusInWindow();
+        keyInputManager.registerGlobalKeyBindings(this);
+    }
+
+    private void setupUI() {
+        // 메인 패널 설정
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        
+        // 왼쪽 패널 (도구 + 색상)
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        
+        // 툴 패널 추가
+        toolPanel = new ToolPanel(toolManager);
+        leftPanel.add(toolPanel);
+        
+        // 색상 패널 추가
+        colorPanel = new ColorPanel(document);
+        leftPanel.add(colorPanel);
+        
+        mainPanel.add(leftPanel, BorderLayout.WEST);
+        
+        // 캔버스 뷰 추가
+        canvasView = new CanvasView(document);
+        mainPanel.add(canvasView, BorderLayout.CENTER);
+        
+        // 메뉴바 설정
+        setupMenuBar();
+        
+        add(mainPanel);
+    }
+
+    private void setupMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        
+        // 파일 메뉴
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem newMenuItem = new JMenuItem("New");
+        JMenuItem openMenuItem = new JMenuItem("Open");
+        JMenuItem saveMenuItem = new JMenuItem("Save");
+        JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+        JMenuItem exitMenuItem = new JMenuItem("Exit");
+        
+        newMenuItem.addActionListener(e -> {
+            if (document.isModified()) {
+                int result = JOptionPane.showConfirmDialog(this,
+                    "Do you want to save changes?",
+                    "Save Changes",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
+                
+                if (result == JOptionPane.YES_OPTION) {
+                    saveDocument();
+                } else if (result == JOptionPane.CANCEL_OPTION) {
+                    return;
+                }
+            }
+            
+            document = new Document();
+            toolManager = new ToolManager(document, commandManager);
+            canvasView = new CanvasView(document);
+            colorPanel = new ColorPanel(document);
+            toolPanel = new ToolPanel(toolManager);
+            
+            getContentPane().removeAll();
+            setupUI();
+            revalidate();
+            repaint();
+        });
+        
+        openMenuItem.addActionListener(e -> {
+            if (document.isModified()) {
+                int result = JOptionPane.showConfirmDialog(this,
+                    "Do you want to save changes?",
+                    "Save Changes",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
+                
+                if (result == JOptionPane.YES_OPTION) {
+                    saveDocument();
+                } else if (result == JOptionPane.CANCEL_OPTION) {
+                    return;
+                }
+            }
+            
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    currentFile = fileChooser.getSelectedFile();
+                    loadFile(currentFile);
+                    
+                    setTitle("Vector Editor - " + currentFile.getName());
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                        "Error loading file: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        
+        saveMenuItem.addActionListener(e -> saveDocument());
+        
+        saveAsMenuItem.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                currentFile = fileChooser.getSelectedFile();
+                saveDocument();
+            }
+        });
+        
+        exitMenuItem.addActionListener(e -> {
+            if (document.isModified()) {
+                int result = JOptionPane.showConfirmDialog(this,
+                    "Do you want to save changes?",
+                    "Save Changes",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
+                
+                if (result == JOptionPane.YES_OPTION) {
+                    saveDocument();
+                } else if (result == JOptionPane.CANCEL_OPTION) {
+                    return;
+                }
+            }
+            System.exit(0);
+        });
+        
+        fileMenu.add(newMenuItem);
+        fileMenu.add(openMenuItem);
+        fileMenu.add(saveMenuItem);
+        fileMenu.add(saveAsMenuItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitMenuItem);
+        
+        menuBar.add(fileMenu);
+        
+        setJMenuBar(menuBar);
+    }
+
+    private void saveDocument() {
+        if (currentFile == null) {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                currentFile = fileChooser.getSelectedFile();
+            } else {
+                return;
+            }
+        }
+        
+        try {
+            fileService.saveDocument(document, currentFile);
+            setTitle("Vector Editor - " + currentFile.getName());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error saving file: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadFile(File file) {
+        try {
+            Document newDocument = fileService.loadDocument(file);
+            document = newDocument;
+            canvasView = new CanvasView(document);
+            colorPanel = new ColorPanel(document);
+            toolPanel = new ToolPanel(toolManager);
+            
+            getContentPane().removeAll();
+            setupUI();
+            revalidate();
+            repaint();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MainFrame frame = new MainFrame();
+            frame.setVisible(true);
+        });
+    }
+} 
