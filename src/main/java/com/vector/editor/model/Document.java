@@ -21,6 +21,12 @@ public class Document implements Serializable {
         this.selection = new SelectionManager();
         this.style = new StyleManager();
         this.support = new PropertyChangeSupport(this);
+
+        this.selection.addPropertyChangeListener(evt -> {
+            if (SelectionManager.PROPERTY_SELECTED_SHAPES.equals(evt.getPropertyName())) {
+                support.firePropertyChange("selection", evt.getOldValue(), evt.getNewValue());
+            }
+        });
     }
 
     // ShapeCollection 위임 메서드

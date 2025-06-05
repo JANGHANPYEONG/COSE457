@@ -1,8 +1,11 @@
 package com.vector.editor.view;
 
+import com.vector.editor.controller.StateManager;
 import com.vector.editor.controller.ToolManager;
 import com.vector.editor.model.Document;
+import com.vector.editor.model.shape.Shape;
 import com.vector.editor.service.FileService;
+import java.util.List;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -17,12 +20,15 @@ public class MainFrame extends JFrame {
     private File currentFile;
     private FileService fileService;
     private CommandManager commandManager;
+    private StateManager stateManager;
+    private StatePanel statePanel;
 
     public MainFrame() {
         document = new Document();
         commandManager = new CommandManager();
         toolManager = new ToolManager(document, commandManager);
         fileService = new FileService();
+        stateManager = new StateManager(document, commandManager);
         
         // ToolManager의 currentTool 변경 시 CanvasView에 반영
         toolManager.addPropertyChangeListener(evt -> {
@@ -39,7 +45,14 @@ public class MainFrame extends JFrame {
                 }
             }
         });
-        
+
+        stateManager.addPropertyChangeListener(evt -> {
+            if (evt.getPropertyName().equals(StateManager.PROPERTY_POSITION_CHANGED)
+                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)) {
+                canvasView.repaint();
+            }
+        });
+
         setTitle("Vector Editor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
@@ -71,6 +84,17 @@ public class MainFrame extends JFrame {
         leftPanel.add(colorPanel);
         
         mainPanel.add(leftPanel, BorderLayout.WEST);
+
+        // 오른쪽 패널 (상태)
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.setPreferredSize(new Dimension(150, 1000));
+
+        // 상태 패널 추가
+        statePanel = new StatePanel(stateManager);
+        rightPanel.add(statePanel);
+
+        mainPanel.add(rightPanel, BorderLayout.EAST);
         
         // 캔버스 뷰 추가
         canvasView = new CanvasView(document);
@@ -109,6 +133,7 @@ public class MainFrame extends JFrame {
             
             document = new Document();
             toolManager = new ToolManager(document, commandManager);
+            stateManager = new StateManager(document, commandManager);
             canvasView = new CanvasView(document);
             colorPanel = new ColorPanel(document);
             toolPanel = new ToolPanel(toolManager);
@@ -215,6 +240,7 @@ public class MainFrame extends JFrame {
             canvasView = new CanvasView(document);
             colorPanel = new ColorPanel(document);
             toolPanel = new ToolPanel(toolManager);
+            statePanel = new StatePanel(stateManager);
             
             getContentPane().removeAll();
             setupUI();

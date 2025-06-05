@@ -165,8 +165,7 @@ public abstract class Shape implements Serializable {
     }
 
     public void move(int dx, int dy) {
-        x += dx;
-        y += dy;
+        setPosition(x + dx, y + dy);
     }
 
     // 4개 모서리 핸들 위치 반환
