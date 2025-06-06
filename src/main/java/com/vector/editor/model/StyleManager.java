@@ -3,8 +3,9 @@ package com.vector.editor.model;
 import java.awt.Color;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
 
-public class StyleManager {
+public class StyleManager implements Serializable {
     private Color fillColor;
     private Color strokeColor;
     private int strokeWidth;

@@ -3,10 +3,11 @@ package com.vector.editor.model;
 import com.vector.editor.model.shape.Shape;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShapeCollection {
+public class ShapeCollection implements Serializable {
     private List<Shape> shapes;
     private PropertyChangeSupport support;
 

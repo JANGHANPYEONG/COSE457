@@ -130,16 +130,18 @@ public class MainFrame extends JFrame {
                     return;
                 }
             }
-            
+
             document = new Document();
             toolManager = new ToolManager(document, commandManager);
             stateManager = new StateManager(document, commandManager);
             canvasView = new CanvasView(document);
             colorPanel = new ColorPanel(document);
             toolPanel = new ToolPanel(toolManager);
+            statePanel = new StatePanel(stateManager);
             
             getContentPane().removeAll();
             setupUI();
+            setupEventListeners();
             revalidate();
             repaint();
         });
@@ -236,19 +238,53 @@ public class MainFrame extends JFrame {
     private void loadFile(File file) {
         try {
             Document newDocument = fileService.loadDocument(file);
-            document = newDocument;
-            canvasView = new CanvasView(document);
-            colorPanel = new ColorPanel(document);
-            toolPanel = new ToolPanel(toolManager);
-            statePanel = new StatePanel(stateManager);
+            this.document = newDocument;
+
+            this.toolManager = new ToolManager(document, commandManager);
+            this.stateManager = new StateManager(document, commandManager);
+            this.canvasView = new CanvasView(document);
+            this.colorPanel = new ColorPanel(document);
+            this.toolPanel = new ToolPanel(toolManager);
+            this.statePanel = new StatePanel(stateManager);
             
             getContentPane().removeAll();
             setupUI();
+            setupEventListeners();
             revalidate();
             repaint();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage());
         }
+    }
+
+    private void setupEventListeners() {
+        // ToolManager 리스너 재설정
+        toolManager.addPropertyChangeListener(evt -> {
+            if ("currentTool".equals(evt.getPropertyName())) {
+                if (canvasView != null) {
+                    canvasView.setTool((com.vector.editor.controller.tool.Tool) evt.getNewValue());
+                }
+                Object oldTool = evt.getOldValue();
+                Object newTool = evt.getNewValue();
+                if (oldTool != null && oldTool instanceof com.vector.editor.controller.tool.SelectTool
+                    && !(newTool instanceof com.vector.editor.controller.tool.SelectTool)) {
+                    document.clearSelection();
+                }
+            }
+        });
+
+        // StateManager 리스너 재설정
+        stateManager.addPropertyChangeListener(evt -> {
+            if (evt.getPropertyName().equals(StateManager.PROPERTY_POSITION_CHANGED)
+                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)) {
+                canvasView.repaint();
+            }
+        });
+
+        // KeyInputManager 재등록
+        KeyInputManager keyInputManager = new KeyInputManager(toolManager, commandManager, document, canvasView);
+        this.addKeyListener(keyInputManager);
+        keyInputManager.registerGlobalKeyBindings(this);
     }
 
     public static void main(String[] args) {

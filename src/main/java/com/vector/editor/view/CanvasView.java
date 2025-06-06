@@ -13,7 +13,7 @@ import java.beans.PropertyChangeListener;
 
 public class CanvasView extends JPanel implements PropertyChangeListener {
     private Document document;
-    private Tool currentTool;
+    private transient Tool currentTool;
     private double zoom = 1.0;
 
     public CanvasView(Document document) {
