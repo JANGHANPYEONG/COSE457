@@ -7,218 +7,209 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 public class StatePanel extends JPanel {
-    private final JLabel positionLabel;
-    private final JLabel sizeLabel;
     private final StateManager stateManager;
     private Shape currentShape;
 
+    private final JLabel shapeTypeValue;
+    private final JLabel fillColorValue;
+    private final JLabel strokeColorValue;
+    private final JPanel fillColorPreview;
+    private final JPanel strokeColorPreview;
+    private final JLabel positionValue;
+    private final JLabel sizeValue;
+
     public StatePanel(StateManager stateManager) {
         this.stateManager = stateManager;
-
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        setBorder(BorderFactory.createTitledBorder("State"));
+        setPreferredSize(new Dimension(200, 300));
 
-        positionLabel = createEditableLabel("Position: (0, 0)", "Position");
-        sizeLabel = createEditableLabel("Size: 0x0", "Size");
+        shapeTypeValue = createValueLabel("-");
+        fillColorValue = createValueLabel("None");
+        strokeColorValue = createValueLabel("None");
+        positionValue = createEditableLabel("Position: (0, 0)", "Position");
+        sizeValue = createEditableLabel("Size: 0x0", "Size");
 
-        add(positionLabel);
-        add(sizeLabel);
+        fillColorPreview = createColorBox(true);
+        strokeColorPreview = createColorBox(false);
+
+        add(createLabeledBox("Shape Type", shapeTypeValue));
         add(Box.createVerticalStrut(10));
+        add(createLabeledBox("Fill Color", fillColorValue, fillColorPreview));
+        add(Box.createVerticalStrut(10));
+        add(createLabeledBox("Stroke Color", strokeColorValue, strokeColorPreview));
+        add(Box.createVerticalStrut(10));
+        add(createLabeledBox("Position", positionValue));
+        add(Box.createVerticalStrut(10));
+        add(createLabeledBox("Size", sizeValue));
 
-        // StateManager의 이벤트 리스닝
         setupStateManagerListeners();
-
-        // 초기 상태 업데이트
         updateShape(stateManager.getCurrentShape());
     }
 
-    private void setupStateManagerListeners() {
-        // 현재 선택된 도형 변경 시
-        stateManager.addPropertyChangeListener(StateManager.PROPERTY_CURRENT_SHAPE,
-            new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    updateShape((Shape) evt.getNewValue());
-                }
-            });
+    private JLabel createValueLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(new Color(50, 100, 255));
+        label.setFont(new Font("SansSerif", Font.BOLD, 16));
+        return label;
+    }
 
-        // 도형의 위치 변경 시 실시간 업데이트
-        stateManager.addPropertyChangeListener(StateManager.PROPERTY_POSITION_CHANGED,
-            new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (currentShape != null) {
-                        SwingUtilities.invokeLater(() -> {
-                            positionLabel.setText(String.format("Position: (%d, %d)",
-                                currentShape.getX(), currentShape.getY()));
-                        });
+    private JPanel createColorBox(boolean isFill) {
+        JPanel box = new JPanel();
+        box.setPreferredSize(new Dimension(25, 25));
+        box.setBackground(Color.LIGHT_GRAY);
+        box.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        box.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        box.setToolTipText("Click to change " + (isFill ? "fill" : "stroke") + " color");
+
+        box.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (currentShape != null) {
+                    Color initial = isFill ? currentShape.getFillColor() : currentShape.getStrokeColor();
+                    Color selected = JColorChooser.showDialog(StatePanel.this, "Choose Color", initial);
+                    if (selected != null) {
+                        if (isFill) {
+                            currentShape.setFillColor(selected);
+                            fillColorValue.setText(colorToHex(selected));
+                        } else {
+                            currentShape.setStrokeColor(selected);
+                            strokeColorValue.setText(colorToHex(selected));
+                        }
+                        box.setBackground(selected);
                     }
                 }
-            });
-
-        // 도형의 크기 변경 시 실시간 업데이트
-        stateManager.addPropertyChangeListener(StateManager.PROPERTY_SIZE_CHANGED,
-            new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (currentShape != null) {
-                        SwingUtilities.invokeLater(() -> {
-                            sizeLabel.setText(String.format("Size: %dx%d",
-                                currentShape.getWidth(), currentShape.getHeight()));
-                        });
-                    }
-                }
-            });
+            }
+        });
+        return box;
     }
 
     private JLabel createEditableLabel(String initialText, String type) {
-        JLabel label = new JLabel(initialText);
-        label.setForeground(Color.BLUE);
+        JLabel label = createValueLabel(initialText);
         label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         label.setToolTipText("Click to edit " + type.toLowerCase());
 
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (currentShape == null) {
-                    JOptionPane.showMessageDialog(StatePanel.this,
-                        "No shape selected", "Information", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-
+                if (currentShape == null) return;
                 showEditDialog(type);
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                if (currentShape != null) {
-                    label.setForeground(Color.RED);
-                }
+                if (currentShape != null) label.setForeground(Color.RED);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                if (currentShape != null) {
-                    label.setForeground(Color.BLUE);
-                }
+                if (currentShape != null) label.setForeground(new Color(50, 100, 255));
             }
         });
-
         return label;
     }
 
-    private void showEditDialog(String type) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
+    private JPanel createLabeledBox(String labelText, JLabel valueLabel) {
+        return createLabeledBox(labelText, valueLabel, null);
+    }
 
-        JTextField xField = new JTextField(8);
-        JTextField yField = new JTextField(8);
+    private JPanel createLabeledBox(String labelText, JLabel valueLabel, JComponent previewBox) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setMaximumSize(new Dimension(180, 80));
+        panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        String title, xLabel, yLabel;
-        int currentX, currentY;
+        JLabel label = new JLabel(labelText);
+        label.setForeground(Color.DARK_GRAY);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        if (type.equals("Position")) {
-            title = "Edit Position";
-            xLabel = "X:";
-            yLabel = "Y:";
-            currentX = currentShape.getX();
-            currentY = currentShape.getY();
-        } else {
-            title = "Edit Size";
-            xLabel = "Width:";
-            yLabel = "Height:";
-            currentX = currentShape.getWidth();
-            currentY = currentShape.getHeight();
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panel.add(label);
+        panel.add(valueLabel);
+
+        if (previewBox != null) {
+            previewBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+            panel.add(Box.createVerticalStrut(5));
+            panel.add(previewBox);
         }
 
-        xField.setText(String.valueOf(currentX));
-        yField.setText(String.valueOf(currentY));
+        return panel;
+    }
 
-        // 레이아웃 설정
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel(xLabel), gbc);
+    private void showEditDialog(String type) {
+        JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
+        JTextField xField = new JTextField();
+        JTextField yField = new JTextField();
 
-        gbc.gridx = 1;
-        panel.add(xField, gbc);
+        if (type.equals("Position")) {
+            xField.setText(String.valueOf(currentShape.getX()));
+            yField.setText(String.valueOf(currentShape.getY()));
+        } else {
+            xField.setText(String.valueOf(currentShape.getWidth()));
+            yField.setText(String.valueOf(currentShape.getHeight()));
+        }
 
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel(yLabel), gbc);
+        panel.add(new JLabel(type.equals("Position") ? "X:" : "Width:"));
+        panel.add(xField);
+        panel.add(new JLabel(type.equals("Position") ? "Y:" : "Height:"));
+        panel.add(yField);
 
-        gbc.gridx = 1;
-        panel.add(yField, gbc);
-
-        // 포커스 설정
-        SwingUtilities.invokeLater(() -> {
-            xField.requestFocusInWindow();
-            xField.selectAll();
-        });
-
-        int result = JOptionPane.showConfirmDialog(
-            this, panel, title,
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.PLAIN_MESSAGE
-        );
-
+        int result = JOptionPane.showConfirmDialog(this, panel, "Edit " + type, JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 int x = Integer.parseInt(xField.getText().trim());
                 int y = Integer.parseInt(yField.getText().trim());
-
-                // 유효성 검사
-                if (type.equals("Size") && (x <= 0 || y <= 0)) {
-                    JOptionPane.showMessageDialog(this,
-                        "Width and height must be positive numbers",
-                        "Invalid Input", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (type.equals("Position") && (x < 0 || y < 0)) {
-                    JOptionPane.showMessageDialog(this,
-                        "Position coordinates cannot be negative",
-                        "Invalid Input", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // StateManager를 통해 변경 적용 (Command 패턴 사용)
                 if (type.equals("Position")) {
                     stateManager.setPosition(x, y);
                 } else {
                     stateManager.setSize(x, y);
                 }
-
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Please enter valid numbers",
-                    "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid number format", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
+    private void setupStateManagerListeners() {
+        stateManager.addPropertyChangeListener(StateManager.PROPERTY_CURRENT_SHAPE, evt -> {
+            updateShape((Shape) evt.getNewValue());
+        });
+
+        stateManager.addPropertyChangeListener(StateManager.PROPERTY_POSITION_CHANGED, evt -> {
+            updateShape(currentShape);
+        });
+
+        stateManager.addPropertyChangeListener(StateManager.PROPERTY_SIZE_CHANGED, evt -> {
+            updateShape(currentShape);
+        });
+    }
+
     public void updateShape(Shape shape) {
         this.currentShape = shape;
-
         if (shape == null) {
-            positionLabel.setText("Position: -");
-            sizeLabel.setText("Size: -");
-            positionLabel.setForeground(Color.GRAY);
-            sizeLabel.setForeground(Color.GRAY);
-            positionLabel.setCursor(Cursor.getDefaultCursor());
-            sizeLabel.setCursor(Cursor.getDefaultCursor());
-            positionLabel.setToolTipText("No shape selected");
-            sizeLabel.setToolTipText("No shape selected");
+            shapeTypeValue.setText("-");
+            fillColorValue.setText("None");
+            strokeColorValue.setText("None");
+            fillColorPreview.setBackground(Color.LIGHT_GRAY);
+            strokeColorPreview.setBackground(Color.LIGHT_GRAY);
+            positionValue.setText("(0, 0)");
+            sizeValue.setText("0x0");
         } else {
-            positionLabel.setText(String.format("Position: (%d, %d)", shape.getX(), shape.getY()));
-            sizeLabel.setText(String.format("Size: %dx%d", shape.getWidth(), shape.getHeight()));
-            positionLabel.setForeground(Color.BLUE);
-            sizeLabel.setForeground(Color.BLUE);
-            positionLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            sizeLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            positionLabel.setToolTipText("Click to edit position");
-            sizeLabel.setToolTipText("Click to edit size");
+            shapeTypeValue.setText(shape.getClass().getSimpleName().replace("Shape", ""));
+            fillColorValue.setText(colorToHex(shape.getFillColor()));
+            strokeColorValue.setText(colorToHex(shape.getStrokeColor()));
+            fillColorPreview.setBackground(shape.getFillColor());
+            strokeColorPreview.setBackground(shape.getStrokeColor());
+            positionValue.setText(String.format("(%d, %d)", shape.getX(), shape.getY()));
+            sizeValue.setText(String.format("%dx%d", shape.getWidth(), shape.getHeight()));
         }
     }
+
+    private String colorToHex(Color color) {
+        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()).toUpperCase();
+    }
 }
+

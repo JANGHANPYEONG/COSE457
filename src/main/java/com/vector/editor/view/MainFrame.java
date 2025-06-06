@@ -74,6 +74,7 @@ public class MainFrame extends JFrame {
         // 왼쪽 패널 (도구 + 색상)
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setPreferredSize(new Dimension(150, 1000));
         
         // 툴 패널 추가
         toolPanel = new ToolPanel(toolManager);
@@ -108,7 +109,7 @@ public class MainFrame extends JFrame {
 
     private void setupMenuBar() {
         JMenuBar menuBar = new JMenuBar();
-        
+
         // 파일 메뉴
         JMenu fileMenu = new JMenu("File");
         JMenuItem newMenuItem = new JMenuItem("New");
@@ -116,7 +117,7 @@ public class MainFrame extends JFrame {
         JMenuItem saveMenuItem = new JMenuItem("Save");
         JMenuItem saveAsMenuItem = new JMenuItem("Save As");
         JMenuItem exitMenuItem = new JMenuItem("Exit");
-        
+
         newMenuItem.addActionListener(e -> {
             if (document.isModified()) {
                 int result = JOptionPane.showConfirmDialog(this,
