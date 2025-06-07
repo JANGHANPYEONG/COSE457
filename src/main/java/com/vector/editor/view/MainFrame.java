@@ -74,22 +74,30 @@ public class MainFrame extends JFrame {
         // 왼쪽 패널 (도구 + 색상)
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
-        leftPanel.setPreferredSize(new Dimension(150, 1000));
+        leftPanel.setPreferredSize(new Dimension(130, 1000));
+        leftPanel.setBackground(Color.BLACK);
         
         // 툴 패널 추가
         toolPanel = new ToolPanel(toolManager);
+        toolPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        leftPanel.add(Box.createVerticalStrut(20));
         leftPanel.add(toolPanel);
+        leftPanel.add(Box.createVerticalStrut(30));
         
         // 색상 패널 추가
         colorPanel = new ColorPanel(document);
-        leftPanel.add(colorPanel);
+        JPanel colorPanelContainer = new JPanel(new BorderLayout());
+        colorPanelContainer.setBackground(Color.BLACK);
+        colorPanelContainer.add(colorPanel, BorderLayout.WEST);
+        leftPanel.add(colorPanelContainer);
         
         mainPanel.add(leftPanel, BorderLayout.WEST);
 
         // 오른쪽 패널 (상태)
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setPreferredSize(new Dimension(150, 1000));
+        rightPanel.setPreferredSize(new Dimension(130, 1000));
+        rightPanel.setBackground(Color.BLACK);
 
         // 상태 패널 추가
         statePanel = new StatePanel(stateManager);
@@ -109,14 +117,44 @@ public class MainFrame extends JFrame {
 
     private void setupMenuBar() {
         JMenuBar menuBar = new JMenuBar();
+        menuBar.setBackground(Color.BLACK);
 
         // 파일 메뉴
         JMenu fileMenu = new JMenu("File");
+        fileMenu.setFont(new Font("SansSerif", Font.BOLD, 14));
+        fileMenu.setForeground(Color.LIGHT_GRAY);
+        fileMenu.setBorder(BorderFactory.createEmptyBorder(2, 10, 2, 10));
+        fileMenu.getPopupMenu().setBorder(BorderFactory.createEmptyBorder());
+
         JMenuItem newMenuItem = new JMenuItem("New");
+        newMenuItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        newMenuItem.setBackground(new Color(50, 50, 50));
+        newMenuItem.setForeground(Color.LIGHT_GRAY);
+        newMenuItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
         JMenuItem openMenuItem = new JMenuItem("Open");
+        openMenuItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        openMenuItem.setBackground(new Color(50, 50, 50));
+        openMenuItem.setForeground(Color.LIGHT_GRAY);
+        openMenuItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
         JMenuItem saveMenuItem = new JMenuItem("Save");
+        saveMenuItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        saveMenuItem.setBackground(new Color(50, 50, 50));
+        saveMenuItem.setForeground(Color.LIGHT_GRAY);
+        saveMenuItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
         JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+        saveAsMenuItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        saveAsMenuItem.setBackground(new Color(50, 50, 50));
+        saveAsMenuItem.setForeground(Color.LIGHT_GRAY);
+        saveAsMenuItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
         JMenuItem exitMenuItem = new JMenuItem("Exit");
+        exitMenuItem.setFont(new Font("SansSerif", Font.BOLD, 14));
+        exitMenuItem.setBackground(new Color(50, 50, 50));
+        exitMenuItem.setForeground(Color.LIGHT_GRAY);
+        exitMenuItem.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
         newMenuItem.addActionListener(e -> {
             if (document.isModified()) {

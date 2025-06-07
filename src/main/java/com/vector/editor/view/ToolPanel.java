@@ -1,6 +1,10 @@
 package com.vector.editor.view;
 
 import com.vector.editor.controller.ToolManager;
+import java.awt.image.BufferedImage;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,60 +15,95 @@ import java.awt.Color;
 
 public class ToolPanel extends JPanel {
     private ToolManager toolManager;
-    private ButtonGroup toolGroup;
+    private final Map<String, JButton> toolButtons = new HashMap<>();
+
+    private static final int BUTTON_SIZE = 40;
 
     public ToolPanel(ToolManager toolManager) {
         this.toolManager = toolManager;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        
-        toolGroup = new ButtonGroup();
+        setBackground(Color.BLACK);
+
         initializeTools();
     }
 
     private void initializeTools() {
-        addToolButton("select", "Select", "/icons/selection.png");
+        addToolButton("select", "Select", "/icons/select.png");
         addToolButton("rectangle", "Rectangle", "/icons/rectangle.png");
         addToolButton("ellipse", "Ellipse", "/icons/ellipse.png");
         addToolButton("line", "Line", "/icons/line.png");
         addToolButton("text", "Text", "/icons/text.png");
         addToolButton("freedraw", "Free Draw", "/icons/freedraw.png");
         addToolButton("image", "Image", "/icons/image.png");
+
+        updateToolIcons("select");
     }
 
     private void addToolButton(String toolName, String tooltip, String iconPath) {
-        JToggleButton button = new JToggleButton();
+        ImageIcon baseIcon = new ImageIcon(getClass().getResource(iconPath));
+        Image scaledImage = baseIcon.getImage().getScaledInstance(BUTTON_SIZE - 10, BUTTON_SIZE - 10, Image.SCALE_SMOOTH);
+        ImageIcon scaledIcon = new ImageIcon(scaledImage);
+
+        ImageIcon grayIcon = recolorIcon(scaledIcon, new Color(100, 100, 100));
+        JButton button = new JButton(grayIcon);
+
         button.setToolTipText(tooltip);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setPreferredSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        button.setMaximumSize(new Dimension(BUTTON_SIZE, BUTTON_SIZE));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        java.net.URL imgURL = getClass().getResource(iconPath);
-        if (imgURL != null) {
-            ImageIcon icon = new ImageIcon(imgURL);
-            // 아이콘 크기 조정 (32x32)
-            Image img = icon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
-            button.setIcon(new ImageIcon(img));
-        } else {
-            button.setText(toolName.substring(0, 1).toUpperCase());
-        }
+        button.addActionListener(e -> {
+            toolManager.setCurrentTool(toolName);
+            updateToolIcons(toolName);
 
-        button.setPreferredSize(new Dimension(40, 40));
-        button.setMaximumSize(new Dimension(40, 40));
-        toolGroup.add(button);
-        add(button);
-
-        if (toolName.equals("select")) {
-            button.setSelected(true);
-        }
-
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                toolManager.setCurrentTool(toolName);
-                // Text 도구 선택 시 입력 다이얼로그 표시
-                if (toolName.equals("text")) {
-                    showTextInputDialog();
-                }
+            if (toolName.equals("text")) {
+                showTextInputDialog();
             }
         });
+
+        toolButtons.put(toolName, button);
+        add(button);
+        add(Box.createVerticalStrut(10));
+    }
+
+    private void updateToolIcons(String selectedTool) {
+        for (Map.Entry<String, JButton> entry : toolButtons.entrySet()) {
+            String tool = entry.getKey();
+            JButton button = entry.getValue();
+
+            String iconPath = "/icons/" + tool + ".png";
+
+            ImageIcon baseIcon = new ImageIcon(getClass().getResource(iconPath));
+            Image scaledImage = baseIcon.getImage().getScaledInstance(BUTTON_SIZE - 8, BUTTON_SIZE - 8, Image.SCALE_SMOOTH);
+            ImageIcon scaledIcon = new ImageIcon(scaledImage);
+
+            Color color = tool.equals(selectedTool) ? new Color(50, 100, 255) : new Color(100, 100, 100);
+            button.setIcon(recolorIcon(scaledIcon, color));
+        }
+    }
+
+    private ImageIcon recolorIcon(ImageIcon originalIcon, Color targetColor) {
+        int w = originalIcon.getIconWidth();
+        int h = originalIcon.getIconHeight();
+        BufferedImage originalImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = originalImage.getGraphics();
+        g.drawImage(originalIcon.getImage(), 0, 0, null);
+        g.dispose();
+
+        BufferedImage coloredImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int rgba = originalImage.getRGB(x, y);
+                int alpha = (rgba >> 24) & 0xff;
+                if (alpha == 0) continue;
+                coloredImage.setRGB(x, y, (targetColor.getRGB() & 0x00ffffff) | (alpha << 24));
+            }
+        }
+        return new ImageIcon(coloredImage);
     }
 
     // 텍스트 입력 다이얼로그

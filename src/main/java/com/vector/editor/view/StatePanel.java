@@ -13,8 +13,6 @@ public class StatePanel extends JPanel {
     private Shape currentShape;
 
     private final JLabel shapeTypeValue;
-    private final JLabel fillColorValue;
-    private final JLabel strokeColorValue;
     private final JPanel fillColorPreview;
     private final JPanel strokeColorPreview;
     private final JLabel positionValue;
@@ -25,10 +23,10 @@ public class StatePanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createTitledBorder("State"));
         setPreferredSize(new Dimension(200, 300));
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        setBackground(Color.BLACK);
 
         shapeTypeValue = createValueLabel("-");
-        fillColorValue = createValueLabel("None");
-        strokeColorValue = createValueLabel("None");
         positionValue = createEditableLabel("Position: (0, 0)", "Position");
         sizeValue = createEditableLabel("Size: 0x0", "Size");
 
@@ -37,9 +35,9 @@ public class StatePanel extends JPanel {
 
         add(createLabeledBox("Shape Type", shapeTypeValue));
         add(Box.createVerticalStrut(10));
-        add(createLabeledBox("Fill Color", fillColorValue, fillColorPreview));
+        add(createLabeledBox("Fill Color", null, fillColorPreview));
         add(Box.createVerticalStrut(10));
-        add(createLabeledBox("Stroke Color", strokeColorValue, strokeColorPreview));
+        add(createLabeledBox("Stroke Color", null, strokeColorPreview));
         add(Box.createVerticalStrut(10));
         add(createLabeledBox("Position", positionValue));
         add(Box.createVerticalStrut(10));
@@ -58,9 +56,10 @@ public class StatePanel extends JPanel {
 
     private JPanel createColorBox(boolean isFill) {
         JPanel box = new JPanel();
-        box.setPreferredSize(new Dimension(25, 25));
+        box.setPreferredSize(new Dimension(150, 30));
+        box.setMaximumSize(new Dimension(150, 30));
         box.setBackground(Color.LIGHT_GRAY);
-        box.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        box.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         box.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         box.setToolTipText("Click to change " + (isFill ? "fill" : "stroke") + " color");
 
@@ -73,10 +72,8 @@ public class StatePanel extends JPanel {
                     if (selected != null) {
                         if (isFill) {
                             currentShape.setFillColor(selected);
-                            fillColorValue.setText(colorToHex(selected));
                         } else {
                             currentShape.setStrokeColor(selected);
-                            strokeColorValue.setText(colorToHex(selected));
                         }
                         box.setBackground(selected);
                     }
@@ -120,15 +117,19 @@ public class StatePanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setMaximumSize(new Dimension(180, 80));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        panel.setBackground(Color.BLACK);
 
         JLabel label = new JLabel(labelText);
-        label.setForeground(Color.DARK_GRAY);
+        label.setForeground(Color.LIGHT_GRAY);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         panel.add(label);
-        panel.add(valueLabel);
+
+        if (valueLabel != null) {
+            valueLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+            valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            panel.add(valueLabel);
+        }
 
         if (previewBox != null) {
             previewBox.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -191,25 +192,17 @@ public class StatePanel extends JPanel {
         this.currentShape = shape;
         if (shape == null) {
             shapeTypeValue.setText("-");
-            fillColorValue.setText("None");
-            strokeColorValue.setText("None");
             fillColorPreview.setBackground(Color.LIGHT_GRAY);
             strokeColorPreview.setBackground(Color.LIGHT_GRAY);
             positionValue.setText("(0, 0)");
             sizeValue.setText("0x0");
         } else {
             shapeTypeValue.setText(shape.getClass().getSimpleName().replace("Shape", ""));
-            fillColorValue.setText(colorToHex(shape.getFillColor()));
-            strokeColorValue.setText(colorToHex(shape.getStrokeColor()));
             fillColorPreview.setBackground(shape.getFillColor());
             strokeColorPreview.setBackground(shape.getStrokeColor());
             positionValue.setText(String.format("(%d, %d)", shape.getX(), shape.getY()));
             sizeValue.setText(String.format("%dx%d", shape.getWidth(), shape.getHeight()));
         }
-    }
-
-    private String colorToHex(Color color) {
-        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()).toUpperCase();
     }
 }
 
