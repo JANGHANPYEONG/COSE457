@@ -82,7 +82,7 @@ public class MainFrame extends JFrame {
         toolPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         leftPanel.add(Box.createVerticalStrut(20));
         leftPanel.add(toolPanel);
-        leftPanel.add(Box.createVerticalStrut(30));
+        leftPanel.add(Box.createVerticalStrut(15));
         
         // 색상 패널 추가
         colorPanel = new ColorPanel(document);

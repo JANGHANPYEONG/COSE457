@@ -67,7 +67,7 @@ public class ToolPanel extends JPanel {
 
         toolButtons.put(toolName, button);
         add(button);
-        add(Box.createVerticalStrut(10));
+        add(Box.createVerticalStrut(15));
     }
 
     private void updateToolIcons(String selectedTool) {
