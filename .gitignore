@@ -9,3 +9,7 @@
 
 .idea/
 *.iml
+
+# Compiled class files
+target/
+*.class

@@ -1,8 +1,7 @@
 package com.vector.editor.command;
 
-import com.vector.editor.CanvasPanel;
-import com.vector.editor.core.Shape;
-import com.vector.editor.core.Shape.HandlePosition;
+import com.vector.editor.model.Document;
+import com.vector.editor.model.shape.Shape;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,14 +9,16 @@ import java.util.List;
 import java.util.Map;
 
 public class ResizeCommand implements Command {
+    private Document document;
     private final List<Shape> shapes;
     private final Map<Shape, Rectangle> beforeStates;
     private final Map<Shape, Rectangle> afterStates;
 
-    public ResizeCommand(List<Shape> shapes, Map<Shape, Rectangle> beforeStates, Map<Shape, Rectangle> afterStates) {
+    public ResizeCommand(Document document, List<Shape> shapes, Map<Shape, Rectangle> beforeStates, Map<Shape, Rectangle> afterStates) {
+        this.document = document;
         this.shapes = new ArrayList<>(shapes);
-        this.beforeStates = beforeStates;
-        this.afterStates = afterStates;
+        this.beforeStates = new HashMap<>(beforeStates);
+        this.afterStates = new HashMap<>(afterStates);
     }
 
     @Override

@@ -1,24 +1,24 @@
 package com.vector.editor.command;
 
-import com.vector.editor.core.Shape;
-import java.util.List;
+import com.vector.editor.model.Document;
+import com.vector.editor.model.shape.Shape;
 
 public class AddShapeCommand implements Command {
-    private final List<Shape> shapeList;
-    private final Shape shape;
+    private Document document;
+    private Shape shape;
 
-    public AddShapeCommand(List<Shape> shapeList, Shape shape) {
-        this.shapeList = shapeList;
+    public AddShapeCommand(Document document, Shape shape) {
+        this.document = document;
         this.shape = shape;
     }
 
     @Override
     public void execute() {
-        shapeList.add(shape);
+        document.addShape(shape);
     }
 
     @Override
     public void undo() {
-        shapeList.remove(shape);
+        document.removeShape(shape);
     }
 }
