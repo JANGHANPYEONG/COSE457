@@ -4,6 +4,9 @@ import com.vector.editor.model.shape.Shape;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class Document implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -15,6 +18,7 @@ public class Document implements Serializable {
     private PropertyChangeSupport support;
 
     public static final String PROPERTY_MODIFIED = "modified";
+    public static final String PROPERTY_ZORDER = "zOrder";
 
     public Document() {
         this.shapes = new ShapeCollection();
@@ -71,6 +75,85 @@ public class Document implements Serializable {
 
     public void setStrokeWidth(int width) {
         style.setStrokeWidth(width);
+        setModified(true);
+    }
+
+    // Z-Order 관리 메서드들
+    public void bringToFront(List<Shape> shapes) {
+        List<Shape> allShapes = new ArrayList<>(getShapes());
+        allShapes.sort(Comparator.comparingInt(Shape::getZOrder));
+
+        // 선택된 도형들을 제외한 나머지 도형들의 zOrder를 조정
+        int baseZOrder = 0;
+        for (Shape shape : allShapes) {
+            if (!shapes.contains(shape)) {
+                shape.setZOrder(baseZOrder++);
+            }
+        }
+        // 선택된 도형들을 맨 앞으로
+        for (Shape shape : shapes) {
+            shape.setZOrder(baseZOrder++);
+        }
+        support.firePropertyChange(PROPERTY_ZORDER, null, shapes);
+        setModified(true);
+    }
+
+    public void sendToBack(List<Shape> shapes) {
+        List<Shape> allShapes = new ArrayList<>(getShapes());
+        allShapes.sort(Comparator.comparingInt(Shape::getZOrder));
+
+        // 선택된 도형들을 맨 뒤로
+        int baseZOrder = 0;
+        for (Shape shape : shapes) {
+            shape.setZOrder(baseZOrder++);
+        }
+        // 나머지 도형들의 zOrder를 조정
+        for (Shape shape : allShapes) {
+            if (!shapes.contains(shape)) {
+                shape.setZOrder(baseZOrder++);
+            }
+        }
+        support.firePropertyChange(PROPERTY_ZORDER, null, shapes);
+        setModified(true);
+    }
+
+    public void bringForward(List<Shape> shapes) {
+        List<Shape> allShapes = new ArrayList<>(getShapes());
+        allShapes.sort(Comparator.comparingInt(Shape::getZOrder));
+
+        // 선택된 도형들의 현재 위치를 찾고, 한 칸씩 앞으로 이동
+        for (Shape shape : shapes) {
+            int currentIndex = allShapes.indexOf(shape);
+            if (currentIndex < allShapes.size() - 1) {
+                Shape nextShape = allShapes.get(currentIndex + 1);
+                if (!shapes.contains(nextShape)) {
+                    int tempZOrder = shape.getZOrder();
+                    shape.setZOrder(nextShape.getZOrder());
+                    nextShape.setZOrder(tempZOrder);
+                }
+            }
+        }
+        support.firePropertyChange(PROPERTY_ZORDER, null, shapes);
+        setModified(true);
+    }
+
+    public void sendBackward(List<Shape> shapes) {
+        List<Shape> allShapes = new ArrayList<>(getShapes());
+        allShapes.sort(Comparator.comparingInt(Shape::getZOrder));
+
+        // 선택된 도형들의 현재 위치를 찾고, 한 칸씩 뒤로 이동
+        for (Shape shape : shapes) {
+            int currentIndex = allShapes.indexOf(shape);
+            if (currentIndex > 0) {
+                Shape prevShape = allShapes.get(currentIndex - 1);
+                if (!shapes.contains(prevShape)) {
+                    int tempZOrder = shape.getZOrder();
+                    shape.setZOrder(prevShape.getZOrder());
+                    prevShape.setZOrder(tempZOrder);
+                }
+            }
+        }
+        support.firePropertyChange(PROPERTY_ZORDER, null, shapes);
         setModified(true);
     }
 

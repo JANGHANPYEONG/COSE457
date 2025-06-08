@@ -14,6 +14,7 @@ public abstract class Shape implements Serializable {
     protected Color strokeColor;
     protected int strokeWidth;
     protected boolean selected;
+    protected int zOrder;
     private PropertyChangeSupport support;
 
     // 선택 UI 관련 상수
@@ -28,6 +29,7 @@ public abstract class Shape implements Serializable {
     public static final String PROPERTY_STROKE_COLOR = "strokeColor";
     public static final String PROPERTY_STROKE_WIDTH = "strokeWidth";
     public static final String PROPERTY_SELECTED = "selected";
+    public static final String PROPERTY_ZORDER = "zOrder";
 
     public Shape(int x, int y, int width, int height, Color fillColor, Color strokeColor, int strokeWidth) {
         this.x = x;
@@ -38,6 +40,7 @@ public abstract class Shape implements Serializable {
         this.strokeColor = strokeColor;
         this.strokeWidth = strokeWidth;
         this.selected = false;
+        this.zOrder = 0;
         this.support = new PropertyChangeSupport(this);
     }
 
@@ -105,6 +108,17 @@ public abstract class Shape implements Serializable {
         boolean oldSelected = this.selected;
         this.selected = selected;
         support.firePropertyChange(PROPERTY_SELECTED, oldSelected, selected);
+    }
+
+    // Z-order 관련 메서드 추가
+    public void setZOrder(int zOrder) {
+        int oldZOrder = this.zOrder;
+        this.zOrder = zOrder;
+        support.firePropertyChange(PROPERTY_ZORDER, oldZOrder, zOrder);
+    }
+
+    public int getZOrder() {
+        return zOrder;
     }
 
     // Getter 메서드들

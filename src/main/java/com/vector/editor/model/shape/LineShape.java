@@ -83,17 +83,6 @@ public class LineShape extends Shape {
     }
 
     @Override
-    public int getHandleAt(int mx, int my) {
-        Point[] handles = getHandlePoints();
-        for (int i = 0; i < handles.length; i++) {
-            Point p = handles[i];
-            Rectangle r = new Rectangle(p.x - HANDLE_SIZE/2, p.y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
-            if (r.contains(mx, my)) return i;
-        }
-        return -1;
-    }
-
-    @Override
     public void resize(int handleIndex, int mx, int my) {
         if (handleIndex == 0) {
             this.x = mx;
@@ -106,4 +95,19 @@ public class LineShape extends Shape {
 
     public int getEndX() { return endX; }
     public int getEndY() { return endY; }
+
+    @Override
+    public int getHandleAt(int mx, int my) {
+        // Line 도형의 핸들 위치 계산
+        Point[] handles = getHandlePoints();
+        for (int i = 0; i < handles.length; i++) {
+            Point p = handles[i];
+            // 핸들의 영역을 약간 더 크게 설정
+            Rectangle r = new Rectangle(p.x - HANDLE_SIZE, p.y - HANDLE_SIZE, HANDLE_SIZE * 2, HANDLE_SIZE * 2);
+            if (r.contains(mx, my)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 } 

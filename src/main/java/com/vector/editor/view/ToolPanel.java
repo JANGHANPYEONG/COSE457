@@ -2,13 +2,10 @@ package com.vector.editor.view;
 
 import com.vector.editor.controller.ToolManager;
 import java.awt.image.BufferedImage;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import com.vector.editor.model.shape.TextShape;
 import java.awt.Font;
 import java.awt.Color;

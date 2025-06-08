@@ -5,6 +5,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class ShapeCollection implements Serializable {
@@ -31,12 +32,15 @@ public class ShapeCollection implements Serializable {
     }
 
     public List<Shape> getShapes() {
-        return new ArrayList<>(shapes);
+        List<Shape> sortedShapes = new ArrayList<>(shapes);
+        sortedShapes.sort(Comparator.comparingInt(Shape::getZOrder));
+        return sortedShapes;
     }
 
     public Shape findShapeAt(int x, int y) {
-        for (int i = shapes.size() - 1; i >= 0; i--) {
-            Shape shape = shapes.get(i);
+        List<Shape> sortedShapes = getShapes();
+        for (int i = sortedShapes.size() - 1; i >= 0; i--) {
+            Shape shape = sortedShapes.get(i);
             if (shape.contains(x, y)) {
                 return shape;
             }

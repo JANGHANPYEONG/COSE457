@@ -2,11 +2,8 @@ package com.vector.editor.view;
 
 import com.vector.editor.controller.StateManager;
 import com.vector.editor.controller.ToolManager;
-import com.vector.editor.controller.tool.SelectTool;
 import com.vector.editor.model.Document;
-import com.vector.editor.model.shape.Shape;
 import com.vector.editor.service.FileService;
-import java.util.List;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -107,7 +104,7 @@ public class MainFrame extends JFrame {
         mainPanel.add(rightPanel, BorderLayout.EAST);
         
         // 캔버스 뷰 추가
-        canvasView = new CanvasView(document);
+        canvasView = new CanvasView(document, commandManager);
         mainPanel.add(canvasView, BorderLayout.CENTER);
         
         // 메뉴바 설정
@@ -175,7 +172,7 @@ public class MainFrame extends JFrame {
             currentFile = null;
             toolManager = new ToolManager(document, commandManager);
             stateManager = new StateManager(document, commandManager);
-            canvasView = new CanvasView(document);
+            canvasView = new CanvasView(document, commandManager);
             colorPanel = new ColorPanel(document);
             toolPanel = new ToolPanel(toolManager);
             statePanel = new StatePanel(stateManager);
@@ -285,7 +282,7 @@ public class MainFrame extends JFrame {
 
             this.toolManager = new ToolManager(document, commandManager);
             this.stateManager = new StateManager(document, commandManager);
-            this.canvasView = new CanvasView(document);
+            this.canvasView = new CanvasView(document, commandManager);
             this.colorPanel = new ColorPanel(document);
             this.toolPanel = new ToolPanel(toolManager);
             this.statePanel = new StatePanel(stateManager);

@@ -44,16 +44,6 @@ public class SelectTool implements Tool {
         return null;
     }
 
-    private Rectangle getSelectionBounds(Document document) {
-        java.util.List<Shape> selected = document.getSelectedShapes();
-        if (selected.isEmpty()) return null;
-        Rectangle bounds = selected.get(0).getBounds();
-        for (int i = 1; i < selected.size(); i++) {
-            bounds = bounds.union(selected.get(i).getBounds());
-        }
-        return bounds;
-    }
-
     private boolean lineIntersectsBox(Shape shape, Rectangle box) {
         if (shape instanceof com.vector.editor.model.shape.LineShape) {
             com.vector.editor.model.shape.LineShape line = (com.vector.editor.model.shape.LineShape) shape;
@@ -66,18 +56,6 @@ public class SelectTool implements Tool {
     @Override
     public void mousePressed(MouseEvent e, Document document) {
         Point point = e.getPoint();
-        Rectangle selBox = getSelectionBounds(document);
-        if (selBox != null && selBox.contains(point)) {
-            startPoint = point;
-            mode = Mode.MOVE;
-            isSelectionBoxMode = false;
-            // 이동 전 상태 저장
-            beforeMove.clear();
-            for (Shape s : document.getSelectedShapes()) {
-                beforeMove.put(s, new Point(s.getX(), s.getY()));
-            }
-            return;
-        }
         Shape hitShape = null;
         int handleIdx = -1;
         // 1. 핸들 hit test 우선
@@ -87,12 +65,14 @@ public class SelectTool implements Tool {
                 if (idx != -1) {
                     hitShape = shape;
                     handleIdx = idx;
+                    // 핸들을 클릭한 도형만 선택 상태로 변경
+                    document.clearSelection();
+                    document.selectShape(shape);
                     break;
                 }
             }
         }
         if (hitShape != null) {
-            System.out.println("핸들입니다");
             selectedShape = hitShape;
             startPoint = point;
             resizeHandleIndex = handleIdx;
@@ -101,13 +81,11 @@ public class SelectTool implements Tool {
             // 리사이즈 전 상태 저장
             beforeResize.clear();
             beforeLineResize.clear();
-            for (Shape s : document.getSelectedShapes()) {
-                if (s instanceof LineShape) {
-                    LineShape l = (LineShape) s;
-                    beforeLineResize.put(l, new Point[]{new Point(l.getX(), l.getY()), new Point(l.getEndX(), l.getEndY())});
-                } else {
-                    beforeResize.put(s, new Rectangle(s.getX(), s.getY(), s.getWidth(), s.getHeight()));
-                }
+            if (hitShape instanceof LineShape) {
+                LineShape l = (LineShape) hitShape;
+                beforeLineResize.put(l, new Point[]{new Point(l.getX(), l.getY()), new Point(l.getEndX(), l.getEndY())});
+            } else {
+                beforeResize.put(hitShape, new Rectangle(hitShape.getX(), hitShape.getY(), hitShape.getWidth(), hitShape.getHeight()));
             }
         } else {
             // 2. 도형 내부 hit test
@@ -120,31 +98,27 @@ public class SelectTool implements Tool {
                         document.selectShape(shape);
                     }
                 } else {
-                    document.clearSelection();
-                    document.selectShape(shape);
-                }
-                selectedShape = shape;
-                startPoint = point;
-                resizeHandleIndex = shape.getHandleAt(point.x, point.y);
-                if (resizeHandleIndex != -1) {
-                    mode = Mode.RESIZE;
-                    // 리사이즈 전 상태 저장
-                    beforeResize.clear();
-                    beforeLineResize.clear();
-                    for (Shape s : document.getSelectedShapes()) {
-                        if (s instanceof LineShape) {
-                            LineShape l = (LineShape) s;
-                            beforeLineResize.put(l, new Point[]{new Point(l.getX(), l.getY()), new Point(l.getEndX(), l.getEndY())});
-                        } else {
-                            beforeResize.put(s, new Rectangle(s.getX(), s.getY(), s.getWidth(), s.getHeight()));
+                    // 선택된 도형 중 하나를 클릭한 경우
+                    if (document.isSelected(shape)) {
+                        // 이미 선택된 도형을 클릭한 경우, 모든 선택된 도형을 이동
+                        selectedShape = shape;
+                        startPoint = point;
+                        mode = Mode.MOVE;
+                        // 이동 전 상태 저장
+                        beforeMove.clear();
+                        for (Shape s : document.getSelectedShapes()) {
+                            beforeMove.put(s, new Point(s.getX(), s.getY()));
                         }
-                    }
-                } else {
-                    mode = Mode.MOVE;
-                    // 이동 전 상태 저장
-                    beforeMove.clear();
-                    for (Shape s : document.getSelectedShapes()) {
-                        beforeMove.put(s, new Point(s.getX(), s.getY()));
+                    } else {
+                        // 새로운 도형을 클릭한 경우, 이전 선택을 모두 해제하고 새로 선택
+                        document.clearSelection();
+                        document.selectShape(shape);
+                        selectedShape = shape;
+                        startPoint = point;
+                        mode = Mode.MOVE;
+                        // 이동 전 상태 저장
+                        beforeMove.clear();
+                        beforeMove.put(shape, new Point(shape.getX(), shape.getY()));
                     }
                 }
                 isSelectionBoxMode = false;

@@ -3,6 +3,7 @@ package com.vector.editor.view;
 import com.vector.editor.model.Document;
 import com.vector.editor.model.shape.Shape;
 import com.vector.editor.controller.tool.Tool;
+import com.vector.editor.command.CommandManager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -10,18 +11,25 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.List;
 
 public class CanvasView extends JPanel implements PropertyChangeListener {
     private Document document;
     private transient Tool currentTool;
     private double zoom = 1.0;
+    private ContextMenuManager contextMenuManager;
+    private CommandManager commandManager;
 
-    public CanvasView(Document document) {
+    public CanvasView(Document document, CommandManager commandManager) {
         this.document = document;
+        this.commandManager = commandManager;
         document.addPropertyChangeListener(this);
         setPreferredSize(new Dimension(800, 600));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        
+        // Initialize context menu manager
+        this.contextMenuManager = new ContextMenuManager(document, this, commandManager);
         
         addMouseListener(new MouseAdapter() {
             @Override
@@ -37,6 +45,13 @@ public class CanvasView extends JPanel implements PropertyChangeListener {
                 if (currentTool != null) {
                     currentTool.mouseReleased(e, document);
                     repaint();
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON3) { // Right click
+                    contextMenuManager.showContextMenu(CanvasView.this, e.getX(), e.getY());
                 }
             }
         });
