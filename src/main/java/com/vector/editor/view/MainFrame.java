@@ -2,6 +2,7 @@ package com.vector.editor.view;
 
 import com.vector.editor.controller.StateManager;
 import com.vector.editor.controller.ToolManager;
+import com.vector.editor.controller.tool.SelectTool;
 import com.vector.editor.model.Document;
 import com.vector.editor.model.shape.Shape;
 import com.vector.editor.service.FileService;
@@ -171,6 +172,7 @@ public class MainFrame extends JFrame {
             }
 
             document = new Document();
+            currentFile = null;
             toolManager = new ToolManager(document, commandManager);
             stateManager = new StateManager(document, commandManager);
             canvasView = new CanvasView(document);
@@ -183,6 +185,8 @@ public class MainFrame extends JFrame {
             setupEventListeners();
             revalidate();
             repaint();
+
+            setTitle("Vector Editor");
         });
         
         openMenuItem.addActionListener(e -> {
@@ -285,12 +289,19 @@ public class MainFrame extends JFrame {
             this.colorPanel = new ColorPanel(document);
             this.toolPanel = new ToolPanel(toolManager);
             this.statePanel = new StatePanel(stateManager);
+
+            document.clearSelection();
             
             getContentPane().removeAll();
             setupUI();
             setupEventListeners();
+
+            canvasView.setTool(toolManager.getCurrentTool());
+
             revalidate();
             repaint();
+
+            setTitle("Vector Editor - " + currentFile.getName());
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage());
         }
@@ -298,6 +309,8 @@ public class MainFrame extends JFrame {
 
     private void setupEventListeners() {
         // ToolManager 리스너 재설정
+        toolManager.setCurrentTool("select");
+
         toolManager.addPropertyChangeListener(evt -> {
             if ("currentTool".equals(evt.getPropertyName())) {
                 if (canvasView != null) {
