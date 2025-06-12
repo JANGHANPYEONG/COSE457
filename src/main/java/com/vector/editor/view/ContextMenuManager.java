@@ -42,7 +42,6 @@ public class ContextMenuManager {
             if (selectedShapes.size() > 1) {
                 Command groupCommand = new GroupCommand(document, selectedShapes);
                 commandManager.executeCommand(groupCommand);
-                canvasView.repaint();
             }
         });
 
@@ -52,32 +51,27 @@ public class ContextMenuManager {
                 GroupShape group = (GroupShape) selectedShapes.get(0);
                 Command ungroupCommand = new UngroupCommand(document, group);
                 commandManager.executeCommand(ungroupCommand);
-                canvasView.repaint();
             }
         });
 
         bringToFrontItem.addActionListener(e -> {
             List<Shape> selectedShapes = document.getSelectedShapes();
             zOrderController.bringToFront(selectedShapes);
-            canvasView.repaint();
         });
 
         sendToBackItem.addActionListener(e -> {
             List<Shape> selectedShapes = document.getSelectedShapes();
             zOrderController.sendToBack(selectedShapes);
-            canvasView.repaint();
         });
 
         bringForwardItem.addActionListener(e -> {
             List<Shape> selectedShapes = document.getSelectedShapes();
             zOrderController.bringForward(selectedShapes);
-            canvasView.repaint();
         });
 
         sendBackwardItem.addActionListener(e -> {
             List<Shape> selectedShapes = document.getSelectedShapes();
             zOrderController.sendBackward(selectedShapes);
-            canvasView.repaint();
         });
 
         menu.add(groupItem);

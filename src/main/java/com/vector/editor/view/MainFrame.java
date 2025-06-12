@@ -46,7 +46,8 @@ public class MainFrame extends JFrame {
 
         stateManager.addPropertyChangeListener(evt -> {
             if (evt.getPropertyName().equals(StateManager.PROPERTY_POSITION_CHANGED)
-                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)) {
+                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)
+                || evt.getPropertyName().equals(StateManager.PROPERTY_COLOR_CHANGED)) {
                 canvasView.repaint();
             }
         });
@@ -325,7 +326,8 @@ public class MainFrame extends JFrame {
         // StateManager 리스너 재설정
         stateManager.addPropertyChangeListener(evt -> {
             if (evt.getPropertyName().equals(StateManager.PROPERTY_POSITION_CHANGED)
-                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)) {
+                || evt.getPropertyName().equals(StateManager.PROPERTY_SIZE_CHANGED)
+                || evt.getPropertyName().equals(StateManager.PROPERTY_COLOR_CHANGED)) {
                 canvasView.repaint();
             }
         });

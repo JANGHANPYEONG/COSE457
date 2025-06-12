@@ -27,6 +27,7 @@ public class StateManager {
     public static final String PROPERTY_CURRENT_SHAPE = "currentShape";
     public static final String PROPERTY_POSITION_CHANGED = "positionChanged";
     public static final String PROPERTY_SIZE_CHANGED = "sizeChanged";
+    public static final String PROPERTY_COLOR_CHANGED = "colorChanged";
 
     public StateManager(Document document, CommandManager commandManager) {
         this.document = document;
@@ -74,6 +75,9 @@ public class StateManager {
                 support.firePropertyChange(PROPERTY_POSITION_CHANGED, evt.getOldValue(), evt.getNewValue());
             } else if (Shape.PROPERTY_SIZE.equals(evt.getPropertyName())) {
                 support.firePropertyChange(PROPERTY_SIZE_CHANGED, evt.getOldValue(), evt.getNewValue());
+            } else if (Shape.PROPERTY_FILL_COLOR.equals(evt.getPropertyName()) ||
+                      Shape.PROPERTY_STROKE_COLOR.equals(evt.getPropertyName())) {
+                support.firePropertyChange(PROPERTY_COLOR_CHANGED, evt.getOldValue(), evt.getNewValue());
             }
         }
     };
