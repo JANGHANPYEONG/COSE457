@@ -1,5 +1,6 @@
 package com.vector.editor.controller;
 
+import com.vector.editor.command.ColorChangeCommand;
 import com.vector.editor.command.MoveCommand;
 import com.vector.editor.command.ResizeCommand;
 import com.vector.editor.model.Document;
@@ -105,6 +106,22 @@ public class StateManager {
         }
 
         commandManager.executeCommand(new ResizeCommand(document, selected, before, after));
+    }
+
+    public void setFillColor(Color color) {
+        if (currentShape == null) return;
+        Color old = currentShape.getFillColor();
+        if (!old.equals(color)) {
+            commandManager.executeCommand(new ColorChangeCommand(currentShape, old, color, true));
+        }
+    }
+
+    public void setStrokeColor(Color color) {
+        if (currentShape == null) return;
+        Color old = currentShape.getStrokeColor();
+        if (!old.equals(color)) {
+            commandManager.executeCommand(new ColorChangeCommand(currentShape, old, color, false));
+        }
     }
 
     // 현재 선택된 도형 반환
