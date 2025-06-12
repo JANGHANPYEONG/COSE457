@@ -71,9 +71,9 @@ public class StatePanel extends JPanel {
                     Color selected = JColorChooser.showDialog(StatePanel.this, "Choose Color", initial);
                     if (selected != null) {
                         if (isFill) {
-                            currentShape.setFillColor(selected);
+                            stateManager.setFillColor(selected);
                         } else {
-                            currentShape.setStrokeColor(selected);
+                            stateManager.setStrokeColor(selected);
                         }
                         box.setBackground(selected);
                     }
